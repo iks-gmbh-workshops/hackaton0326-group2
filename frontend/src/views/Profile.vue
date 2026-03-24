@@ -24,13 +24,41 @@
           </div>
 
           <div v-if="isEditing(field.key)" class="min-w-0 flex-1 space-y-2" :data-profile-field="field.key">
-            <input
+            <UsernameField
+              v-if="field.key === 'displayName'"
               :id="`field-${field.key}`"
-              :type="field.inputType"
               v-model="form[field.key]"
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              :show-label="false"
               :autocomplete="field.autocomplete"
-              @keydown.enter.prevent="finishEdit(field.key)"
+              @keydown="onFieldKeydown($event, field.key)"
+              @blur="finishEdit(field.key)"
+            />
+            <EmailField
+              v-else-if="field.key === 'email'"
+              :id="`field-${field.key}`"
+              v-model="form[field.key]"
+              :show-label="false"
+              :autocomplete="field.autocomplete"
+              @keydown="onFieldKeydown($event, field.key)"
+              @blur="finishEdit(field.key)"
+            />
+            <PasswordField
+              v-else-if="field.key === 'password' || field.key === 'passwordConfirm'"
+              :id="`field-${field.key}`"
+              v-model="form[field.key]"
+              :show-label="false"
+              :autocomplete="field.autocomplete"
+              @keydown="onFieldKeydown($event, field.key)"
+              @blur="finishEdit(field.key)"
+            />
+            <BaseInputField
+              v-else
+              :id="`field-${field.key}`"
+              v-model="form[field.key]"
+              :type="field.inputType"
+              :show-label="false"
+              :autocomplete="field.autocomplete"
+              @keydown="onFieldKeydown($event, field.key)"
               @blur="finishEdit(field.key)"
             />
             <p v-if="field.key === 'password'" class="text-xs text-gray-500">
@@ -103,6 +131,10 @@ import axios from 'axios'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService, type ProfileResponse, type UpdateProfileRequest } from '../api/authService'
+import UsernameField from '../components/fields/UsernameField.vue'
+import EmailField from '../components/fields/EmailField.vue'
+import PasswordField from '../components/fields/PasswordField.vue'
+import BaseInputField from '../components/fields/BaseInputField.vue'
 
 type ProfileFieldKey = 'displayName' | 'email' | 'password' | 'passwordConfirm' | 'firstName' | 'lastName'
 
@@ -252,6 +284,12 @@ const startEdit = (field: ProfileFieldKey) => {
 const finishEdit = (field: ProfileFieldKey) => {
   if (editingField.value !== field) return
   editingField.value = null
+}
+
+const onFieldKeydown = (event: KeyboardEvent, field: ProfileFieldKey) => {
+  if (event.key !== 'Enter') return
+  event.preventDefault()
+  finishEdit(field)
 }
 
 const handleOutsideClick = (event: MouseEvent) => {

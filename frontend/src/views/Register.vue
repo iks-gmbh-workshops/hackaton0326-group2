@@ -3,80 +3,31 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-900">Registrierung</h1>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
-      <div>
-        <label for="username" class="mb-1 block text-sm font-medium text-gray-700">
-          Benutzername (Pflicht)
-        </label>
-        <input
-          id="username"
-          v-model="form.username"
-          type="text"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="username"
-        />
-      </div>
+      <UsernameField id="username" v-model="form.username" label="Benutzername (Pflicht)" required />
+      <EmailField id="email" v-model="form.email" label="E-Mail-Adresse (Pflicht)" required />
+      <PasswordField id="password" v-model="form.password" label="Passwort (Pflicht)" required autocomplete="new-password" />
 
-      <div>
-        <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-          E-Mail-Adresse (Pflicht)
-        </label>
-        <input
-          id="email"
-          v-model="form.email"
-          type="email"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="email"
-        />
-      </div>
+      <BaseInputField
+        id="firstName"
+        v-model="form.firstName"
+        label="Vorname (optional)"
+        autocomplete="given-name"
+      />
 
-      <div>
-        <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
-          Passwort (Pflicht)
-        </label>
-        <input
-          id="password"
-          v-model="form.password"
-          type="password"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="new-password"
-        />
-      </div>
-
-      <div>
-        <label for="firstName" class="mb-1 block text-sm font-medium text-gray-700">
-          Vorname (optional)
-        </label>
-        <input
-          id="firstName"
-          v-model="form.firstName"
-          type="text"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="given-name"
-        />
-      </div>
-
-      <div>
-        <label for="lastName" class="mb-1 block text-sm font-medium text-gray-700">
-          Nachname (optional)
-        </label>
-        <input
-          id="lastName"
-          v-model="form.lastName"
-          type="text"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="family-name"
-        />
-      </div>
+      <BaseInputField
+        id="lastName"
+        v-model="form.lastName"
+        label="Nachname (optional)"
+        autocomplete="family-name"
+      />
 
       <label class="flex items-start gap-2 text-sm text-gray-700">
-        <input
+        <BaseInputField
+          id="termsAccepted"
           v-model="form.termsAccepted"
           type="checkbox"
           required
-          class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          :show-label="false"
         />
         <span>Ich stimme den AGB von hackathon-b zu. (Pflicht)</span>
       </label>
@@ -111,6 +62,10 @@
 import { reactive, ref } from 'vue'
 import axios from 'axios'
 import { authService } from '../api/authService'
+import UsernameField from '../components/fields/UsernameField.vue'
+import EmailField from '../components/fields/EmailField.vue'
+import PasswordField from '../components/fields/PasswordField.vue'
+import BaseInputField from '../components/fields/BaseInputField.vue'
 
 const form = reactive({
   username: '',
