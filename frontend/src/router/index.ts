@@ -17,6 +17,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/Activities.vue')
   },
   {
+    path: '/admin',
+    name: 'Administration',
+    component: () => import('../views/Administration.vue')
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }
