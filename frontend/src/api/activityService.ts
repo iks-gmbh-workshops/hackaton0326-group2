@@ -70,6 +70,11 @@ export const activityService = {
     await api.post(`/activities/${activityId}/decline`)
   },
 
+  // Set activity participation back to pending
+  setActivityPending: async (activityId: number): Promise<void> => {
+    await api.post(`/activities/${activityId}/pending`)
+  },
+
   // Create a new activity
   createActivity: async (
     title: string,
@@ -90,5 +95,3 @@ export const activityService = {
     return response.data
   }
 }
-
-//TODO: Add API to set Activity to Pending

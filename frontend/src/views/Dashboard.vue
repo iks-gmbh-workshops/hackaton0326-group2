@@ -79,14 +79,14 @@
                       <button
                         type="button"
                         class="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700"
-                        @click="acceptInvitation(readField(invitation, ['id', 'invitationId', 'groupInvitationId']) ?? invitation)"
+                        @click="handleAcceptInvitation(invitation)"
                       >
                         Akzeptieren
                       </button>
                       <button
                         type="button"
                         class="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700"
-                        @click="declineInvitation(readField(invitation, ['id', 'invitationId', 'groupInvitationId']) ?? invitation)"
+                        @click="handleDeclineInvitation(invitation)"
                       >
                         Ablehnen
                       </button>
@@ -190,6 +190,24 @@ const displayInvitationName = (invitation: unknown): string =>
 
 const displayInvitationInviter = (invitation: unknown): string =>
   String(readField(invitation, ['invitedByName', 'inviterName', 'createdByName', 'groupLeader']) ?? '-')
+
+const getInvitationId = (invitation: unknown): number | null => {
+  const candidate = readField(invitation, ['id', 'invitationId', 'groupInvitationId'])
+  const parsed = Number(candidate)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const handleAcceptInvitation = async (invitation: unknown) => {
+  const invitationId = getInvitationId(invitation)
+  if (invitationId === null) return
+  await acceptInvitation(invitationId)
+}
+
+const handleDeclineInvitation = async (invitation: unknown) => {
+  const invitationId = getInvitationId(invitation)
+  if (invitationId === null) return
+  await declineInvitation(invitationId)
+}
 </script>
 
 <style scoped>
