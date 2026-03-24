@@ -1,6 +1,4 @@
-import axios from 'axios'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+import { apiClient as api } from './httpClient'
 
 export interface Group {
   id: number
@@ -19,22 +17,6 @@ export interface GroupInvitation {
   invitedAt: string
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED'
 }
-
-const api = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-
-// Add token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
 
 export const groupService = {
   // Get all groups of current user

@@ -105,8 +105,6 @@ const parseJwtPayload = (token: string): JwtPayload | null => {
 
 const isAdmin = computed(() => {
   const localRole =
-    localStorage.getItem('auth_role') ||
-    localStorage.getItem('user_role') ||
     localStorage.getItem('role')
 
   if (localRole?.toUpperCase() === 'ADMIN') {
