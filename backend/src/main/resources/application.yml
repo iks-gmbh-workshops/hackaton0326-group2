@@ -1,11 +1,11 @@
 spring:
   application:
-    name: reme-backend
+    name: hackaton-b
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/reme
-    username: ${DB_USERNAME:reme}
-    password: ${DB_PASSWORD:reme}
+    url: jdbc:postgresql://localhost:5432/hackaton-b
+    username: ${DB_USERNAME:hackaton-b}
+    password: ${DB_PASSWORD:hackaton-b}
     driver-class-name: org.postgresql.Driver
 
   jpa:
