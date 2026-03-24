@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-hackaton-b}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-hackaton-b}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
