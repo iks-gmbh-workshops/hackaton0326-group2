@@ -1,116 +1,119 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
     <div class="border-b border-gray-200 pb-6">
       <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
       <p class="text-gray-600 mt-2">Willkommen! Hier ist dein persönlicher Überblick.</p>
     </div>
 
-    <!-- Stats Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-600 text-sm">Meine Gruppen</p>
-            <p class="text-2xl font-bold text-gray-900">{{ myGroups.length }}</p>
+    <div class="space-y-6">
+      <section class="bg-white rounded-lg shadow p-6 space-y-5">
+        <h2 class="text-2xl font-semibold text-gray-900">Gruppen</h2>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Aktive Gruppen</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+              <thead class="bg-gray-50/70">
+                <tr>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beschreibung</th>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Gruppenleiter</th>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Anzahl Mitglieder</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="isLoadingGroups">
+                  <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
+                </tr>
+                <tr v-else-if="errorGroups">
+                  <td colspan="4" class="px-3 py-3 text-sm text-red-600">{{ errorGroups }}</td>
+                </tr>
+                <tr v-else-if="myGroups.length === 0">
+                  <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Keine aktiven Gruppen vorhanden.</td>
+                </tr>
+                <tr
+                  v-for="(group, index) in myGroups"
+                  v-else
+                  :key="String(readField(group, ['id', 'groupId', 'name']) ?? index)"
+                >
+                  <td class="px-3 py-2 text-sm text-gray-900">{{ displayGroupName(group) }}</td>
+                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayGroupDescription(group) }}</td>
+                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayGroupLeader(group) }}</td>
+                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayMemberCount(group) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <svg class="w-12 h-12 text-blue-100" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-          </svg>
         </div>
-      </div>
 
-      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-600 text-sm">Einladungen</p>
-            <p class="text-2xl font-bold text-gray-900">{{ pendingInvitationsCount }}</p>
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Gruppeneinladungen</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+              <thead class="bg-gray-50/70">
+                <tr>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Eingeladen durch</th>
+                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="isLoadingInvitations">
+                  <td colspan="3" class="px-3 py-3 text-sm text-gray-500">Lade Gruppeneinladungen...</td>
+                </tr>
+                <tr v-else-if="errorInvitations">
+                  <td colspan="3" class="px-3 py-3 text-sm text-red-600">{{ errorInvitations }}</td>
+                </tr>
+                <tr v-else-if="groupInvitations.length === 0">
+                  <td colspan="3" class="px-3 py-3 text-sm text-gray-500">Keine Gruppeneinladungen vorhanden.</td>
+                </tr>
+                <tr
+                  v-for="(invitation, index) in groupInvitations"
+                  v-else
+                  :key="String(readField(invitation, ['id', 'invitationId', 'groupInvitationId']) ?? index)"
+                >
+                  <td class="px-3 py-2 text-sm text-gray-900">{{ displayInvitationName(invitation) }}</td>
+                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayInvitationInviter(invitation) }}</td>
+                  <td class="px-3 py-2 text-sm text-gray-700">
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        class="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700"
+                        @click="acceptInvitation(readField(invitation, ['id', 'invitationId', 'groupInvitationId']) ?? invitation)"
+                      >
+                        Akzeptieren
+                      </button>
+                      <button
+                        type="button"
+                        class="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700"
+                        @click="declineInvitation(readField(invitation, ['id', 'invitationId', 'groupInvitationId']) ?? invitation)"
+                      >
+                        Ablehnen
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <svg class="w-12 h-12 text-yellow-100" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V6c0-1.1-.9-2-2-2zm0 12H6v-2h14v2zm0-3H6V9h14v4zm0-4H6V5h14v4z"/>
-          </svg>
         </div>
-      </div>
+      </section>
 
-      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-600 text-sm">Meine Aktivitäten</p>
-            <p class="text-2xl font-bold text-gray-900">{{ myActivities.length }}</p>
-          </div>
-          <svg class="w-12 h-12 text-green-100" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-2.04-2.71c-.42-.57-1.27-.57-1.68 0-.41.57-.41 1.45 0 2.02l2.87 3.83c.82 1.09 2.47 1.09 3.29 0l4.42-5.88c.41-.57.41-1.45 0-2.02-.42-.57-1.27-.57-1.68 0l-3.13 4.22z"/>
-          </svg>
-        </div>
-      </div>
+      <section class="bg-white rounded-lg shadow p-6 space-y-5">
+        <h2 class="text-2xl font-semibold text-gray-900">Aktivitäten</h2>
 
-      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-600 text-sm">Ausstehend</p>
-            <p class="text-2xl font-bold text-gray-900">{{ pendingActivitiesCount }}</p>
-          </div>
-          <svg class="w-12 h-12 text-red-100" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- My Groups Section -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-          <h2 class="text-xl font-bold text-white">Meine Gruppen</h2>
-        </div>
-        <div class="p-6">
-          <MyGroupsCard 
-            :groups="myGroups" 
-            :is-loading="isLoadingGroups"
-            :error="errorGroups"
-          />
-        </div>
-      </div>
-
-      <!-- Group Invitations Section -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4">
-          <h2 class="text-xl font-bold text-white">Gruppeneinladungen</h2>
-          <p class="text-yellow-100 text-sm mt-1" v-if="hasInvitations">{{ pendingInvitationsCount }} ausstehend</p>
-        </div>
-        <div class="p-6">
-          <GroupInvitationsCard 
-            :invitations="groupInvitations"
-            :is-loading="isLoadingInvitations"
-            :error="errorInvitations"
-            @accept="acceptInvitation"
-            @decline="declineInvitation"
-          />
-        </div>
-      </div>
-
-      <!-- My Activities Section -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-          <h2 class="text-xl font-bold text-white">Meine Aktivitäten</h2>
-        </div>
-        <div class="p-6">
-          <MyActivitiesCard 
-            :activities="upcomingActivities" 
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Anstehende Aktivitäten</h3>
+          <MyActivitiesCard
+            :activities="upcomingActivities"
             :is-loading="isLoadingActivities"
             :error="errorActivities"
           />
         </div>
-      </div>
 
-      <!-- Pending Activities Section -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
-          <h2 class="text-xl font-bold text-white">Ausstehende Aktivitäten</h2>
-          <p class="text-red-100 text-sm mt-1" v-if="hasPendingActivities">{{ pendingActivitiesCount }} Antworten erforderlich</p>
-        </div>
-        <div class="p-6">
-          <PendingActivitiesCard 
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-3">Einladungen zu Aktivitäten</h3>
+          <PendingActivitiesCard
             :activities="pendingActivities"
             :is-loading="isLoadingPending"
             :error="errorPending"
@@ -118,7 +121,7 @@
             @decline="declineActivity"
           />
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -126,8 +129,6 @@
 <script setup lang="ts">
 import { useDashboardGroups } from '../composables/useDashboardGroups'
 import { useDashboardActivities } from '../composables/useDashboardActivities'
-import MyGroupsCard from '../components/Dashboard/MyGroupsCard.vue'
-import GroupInvitationsCard from '../components/Dashboard/GroupInvitationsCard.vue'
 import MyActivitiesCard from '../components/Dashboard/MyActivitiesCard.vue'
 import PendingActivitiesCard from '../components/Dashboard/PendingActivitiesCard.vue'
 
@@ -139,13 +140,10 @@ const {
   errorGroups,
   errorInvitations,
   acceptInvitation,
-  declineInvitation,
-  hasInvitations,
-  pendingInvitationsCount
+  declineInvitation
 } = useDashboardGroups()
 
 const {
-  myActivities,
   pendingActivities,
   isLoadingActivities,
   isLoadingPending,
@@ -153,14 +151,48 @@ const {
   errorPending,
   acceptActivity,
   declineActivity,
-  hasPendingActivities,
-  pendingActivitiesCount,
   upcomingActivities
 } = useDashboardActivities()
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+
+const readField = (group: unknown, keys: string[]): unknown => {
+  const item = asRecord(group)
+  for (const key of keys) {
+    const value = item[key]
+    if (value !== undefined && value !== null && value !== '') return value
+  }
+  return undefined
+}
+
+const displayGroupName = (group: unknown): string =>
+  String(readField(group, ['name', 'groupName', 'title']) ?? '-')
+
+const displayGroupDescription = (group: unknown): string =>
+  String(readField(group, ['description', 'groupDescription', 'desc']) ?? '-')
+
+const displayGroupLeader = (group: unknown): string =>
+  String(readField(group, ['groupLeader', 'leaderName', 'ownerName', 'createdByName']) ?? '-')
+
+const displayMemberCount = (group: unknown): string => {
+  const directCount = readField(group, ['memberCount', 'membersCount', 'numberOfMembers'])
+  if (directCount !== undefined) return String(directCount)
+
+  const members = readField(group, ['members', 'memberList'])
+  if (Array.isArray(members)) return String(members.length)
+
+  return '-'
+}
+
+const displayInvitationName = (invitation: unknown): string =>
+  String(readField(invitation, ['groupName', 'name', 'title']) ?? '-')
+
+const displayInvitationInviter = (invitation: unknown): string =>
+  String(readField(invitation, ['invitedByName', 'inviterName', 'createdByName', 'groupLeader']) ?? '-')
 </script>
 
 <style scoped>
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
