@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="border-b border-gray-200 pb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <h1 class="text-3xl font-bold text-gray-900">Willkommen {{ displayName }}</h1>
       <p class="text-gray-600 mt-2">Willkommen! Hier ist dein persönlicher Überblick.</p>
     </div>
 
@@ -127,10 +127,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useDashboardGroups } from '../composables/useDashboardGroups'
 import { useDashboardActivities } from '../composables/useDashboardActivities'
 import MyActivitiesCard from '../components/Dashboard/MyActivitiesCard.vue'
 import PendingActivitiesCard from '../components/Dashboard/PendingActivitiesCard.vue'
+
+const displayName = computed(() => localStorage.getItem('auth_display_name') || '')
 
 const {
   myGroups,

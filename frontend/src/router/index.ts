@@ -27,6 +27,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/Activities.vue')
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/Profile.vue')
+  },
+  {
     path: '/admin',
     name: 'Administration',
     component: () => import('../views/Administration.vue')
@@ -40,6 +45,23 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+const isAuthenticated = (): boolean => Boolean(localStorage.getItem('auth_token'))
+
+router.beforeEach((to) => {
+  const loggedIn = isAuthenticated()
+  const isAuthPage = to.path === '/login' || to.path === '/register'
+
+  if (!loggedIn && !isAuthPage) {
+    return { path: '/login' }
+  }
+
+  if (loggedIn && isAuthPage) {
+    return { path: '/' }
+  }
+
+  return true
 })
 
 export default router

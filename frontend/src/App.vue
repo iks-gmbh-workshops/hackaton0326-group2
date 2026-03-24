@@ -9,7 +9,7 @@
             </div>
           </div>
 
-          <div class="flex items-center relative" ref="menuRoot">
+          <div v-if="isLoggedIn" class="flex items-center relative" ref="menuRoot">
             <button
               class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               @click="toggleMenu"
@@ -45,6 +45,13 @@
               >
                 Administration
               </router-link>
+              <button
+                type="button"
+                @click="logout"
+                class="block w-full px-4 py-3 text-left text-sm text-red-700 transition hover:bg-red-50"
+              >
+                Abmelden
+              </button>
             </div>
           </div>
         </div>
@@ -59,7 +66,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 type JwtPayload = {
   role?: string
@@ -68,14 +75,21 @@ type JwtPayload = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const menuOpen = ref(false)
 const menuRoot = ref<HTMLElement | null>(null)
+const isLoggedIn = ref(false)
 
 const navItems = [
   { label: 'Startseite', to: '/' },
   { label: 'Gruppen', to: '/groups' },
-  { label: 'Aktivitaeten', to: '/activities' }
+  { label: 'Aktivitaeten', to: '/activities' },
+  { label: 'Profilverwaltung', to: '/profile' }
 ]
+
+const syncAuthState = () => {
+  isLoggedIn.value = Boolean(localStorage.getItem('auth_token'))
+}
 
 const parseJwtPayload = (token: string): JwtPayload | null => {
   try {
@@ -124,6 +138,23 @@ const toggleMenu = () => {
   menuOpen.value = !menuOpen.value
 }
 
+const logout = async () => {
+  const confirmed = window.confirm('Moechtest du dich wirklich abmelden?')
+  if (!confirmed) {
+    return
+  }
+
+  localStorage.removeItem('auth_token')
+  localStorage.removeItem('auth_role')
+  localStorage.removeItem('auth_email')
+  localStorage.removeItem('auth_display_name')
+  localStorage.removeItem('user_role')
+  localStorage.removeItem('role')
+  syncAuthState()
+  menuOpen.value = false
+  await router.push('/login')
+}
+
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as Node | null
   if (!target || !menuRoot.value) {
@@ -135,19 +166,27 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
+const handleStorageChange = () => {
+  syncAuthState()
+}
+
 watch(
   () => route.path,
   () => {
+    syncAuthState()
     menuOpen.value = false
   }
 )
 
 onMounted(() => {
+  syncAuthState()
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('storage', handleStorageChange)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('storage', handleStorageChange)
 })
 </script>
 

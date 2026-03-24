@@ -21,11 +21,36 @@ export interface AuthResponse {
   role: string
 }
 
+export interface ProfileResponse {
+  id?: number
+  email?: string
+  displayName?: string
+  username?: string
+  firstName?: string
+  lastName?: string
+}
+
+export interface UpdateProfileRequest {
+  email: string
+  displayName: string
+  firstName?: string
+  lastName?: string
+  password?: string
+}
+
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json'
   }
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 export const authService = {
@@ -37,5 +62,19 @@ export const authService = {
   login: async (payload: LoginRequest): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', payload)
     return response.data
+  },
+
+  getMyProfile: async (): Promise<ProfileResponse> => {
+    const response = await api.get('/users/me')
+    return response.data
+  },
+
+  updateMyProfile: async (payload: UpdateProfileRequest): Promise<ProfileResponse> => {
+    const response = await api.put('/users/me', payload)
+    return response.data
+  },
+
+  deleteMyProfile: async (): Promise<void> => {
+    await api.delete('/users/me')
   }
 }
