@@ -3,29 +3,20 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-900">Anmeldung</h1>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
-      <div>
-        <label for="username" class="mb-1 block text-sm font-medium text-gray-700">Username</label>
-        <input
-          id="username"
-          v-model="username"
-          type="text"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="username"
-        />
-      </div>
+      <UsernameField
+        id="username"
+        v-model="username"
+        label="Username"
+        :disabled="isSubmitting"
+      />
 
-      <div>
-        <label for="password" class="mb-1 block text-sm font-medium text-gray-700">Passwort</label>
-        <input
-          id="password"
-          v-model="password"
-          type="password"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="current-password"
-        />
-      </div>
+      <PasswordFiled
+        id="password"
+        v-model="password"
+        label="Passwort"
+        autocomplete="current-password"
+        :disabled="isSubmitting"
+      />
 
       <button
         type="submit"
@@ -57,6 +48,8 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import PasswordFiled from '@/components/fields/PasswordFiled.vue'
+import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
 
 const username = ref('')
