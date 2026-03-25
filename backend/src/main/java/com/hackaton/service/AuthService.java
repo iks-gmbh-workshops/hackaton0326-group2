@@ -5,6 +5,9 @@ import com.hackaton.dto.auth.LoginRequest;
 import com.hackaton.dto.auth.RegisterRequest;
 import com.hackaton.model.User;
 import com.hackaton.model.enums.UserRole;
+import com.hackaton.exception.BadRequestException;
+import com.hackaton.exception.ConflictException;
+import com.hackaton.exception.ResourceNotFoundException;
 import com.hackaton.repository.UserRepository;
 import com.hackaton.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +30,11 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email is already registered");
+            throw new ConflictException("Email is already registered");
         }
 
         if (!Boolean.TRUE.equals(request.getAgbAccepted())) {
-            throw new IllegalArgumentException("AGB must be accepted");
+            throw new BadRequestException("AGB must be accepted");
         }
 
         User user = User.builder()
@@ -62,7 +65,7 @@ public class AuthService {
         String token = jwtUtils.generateToken(authentication);
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return AuthResponse.builder()
                 .token(token)

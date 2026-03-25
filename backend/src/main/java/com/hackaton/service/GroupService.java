@@ -1,6 +1,10 @@
 package com.hackaton.service;
 
 import com.hackaton.dto.group.*;
+import com.hackaton.exception.BadRequestException;
+import com.hackaton.exception.ConflictException;
+import com.hackaton.exception.ForbiddenException;
+import com.hackaton.exception.ResourceNotFoundException;
 import com.hackaton.model.Group;
 import com.hackaton.model.GroupMember;
 import com.hackaton.model.User;
@@ -110,12 +114,12 @@ public class GroupService {
     @Transactional
     public GroupResponse joinByToken(String inviteToken, Long userId) {
         Group group = groupRepository.findByInviteToken(inviteToken)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid invite token"));
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid invite token"));
 
         User user = findUser(userId);
 
         if (groupMemberRepository.existsByUserIdAndGroupId(userId, group.getId())) {
-            throw new IllegalArgumentException("User is already a member of this group");
+            throw new ConflictException("User is already a member of this group");
         }
 
         GroupMember member = GroupMember.builder()
@@ -138,10 +142,10 @@ public class GroupService {
 
         GroupMember member = groupMemberRepository.findByUserIdAndGroupId(targetUserId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("User is not an active member of this group"));
+                .orElseThrow(() -> new ResourceNotFoundException("User is not an active member of this group"));
 
         if (member.getRole() == GroupRole.VERWALTER && requesterRole != UserRole.ADMIN) {
-            throw new IllegalArgumentException("Cannot remove a Verwalter unless you are an Admin");
+            throw new ForbiddenException("Cannot remove a Verwalter unless you are an Admin");
         }
 
         member.setStatus(MemberStatus.LEFT);
@@ -152,14 +156,14 @@ public class GroupService {
     public void leaveGroup(Long groupId, Long userId) {
         GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("Not a member of this group"));
+                .orElseThrow(() -> new ResourceNotFoundException("Not a member of this group"));
 
         long activeVerwalterCount = groupMemberRepository.findByGroupId(groupId).stream()
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE && gm.getRole() == GroupRole.VERWALTER)
                 .count();
 
         if (member.getRole() == GroupRole.VERWALTER && activeVerwalterCount <= 1) {
-            throw new IllegalArgumentException("Cannot leave group as the last Verwalter. Transfer the role first.");
+            throw new BadRequestException("Cannot leave group as the last Verwalter. Transfer the role first.");
         }
 
         member.setStatus(MemberStatus.LEFT);
@@ -173,13 +177,13 @@ public class GroupService {
 
         GroupMember member = groupMemberRepository.findByUserIdAndGroupId(targetUserId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("User is not an active member of this group"));
+                .orElseThrow(() -> new ResourceNotFoundException("User is not an active member of this group"));
 
         GroupRole newRole;
         try {
             newRole = GroupRole.valueOf(request.getRole());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid role. Must be VERWALTER or MITGLIED");
+            throw new BadRequestException("Invalid role. Must be VERWALTER or MITGLIED");
         }
 
         member.setRole(newRole);
@@ -196,7 +200,7 @@ public class GroupService {
 
         groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("Not a member of this group"));
+                .orElseThrow(() -> new ForbiddenException("Not a member of this group"));
     }
 
     private void checkVerwalterOrAdmin(Long userId, Long groupId, UserRole userRole) {
@@ -204,21 +208,21 @@ public class GroupService {
 
         GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("Not a member of this group"));
+                .orElseThrow(() -> new ForbiddenException("Not a member of this group"));
 
         if (member.getRole() != GroupRole.VERWALTER) {
-            throw new IllegalArgumentException("Only Verwalter or Admin can perform this action");
+            throw new ForbiddenException("Only Verwalter or Admin can perform this action");
         }
     }
 
     private Group findGroup(Long groupId) {
         return groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
     }
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private GroupResponse toResponse(Group group) {

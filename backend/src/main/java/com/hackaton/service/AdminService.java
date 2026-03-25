@@ -4,6 +4,8 @@ import com.hackaton.dto.activity.ActivityResponse;
 import com.hackaton.dto.admin.ChangeUserRoleRequest;
 import com.hackaton.dto.admin.UserResponse;
 import com.hackaton.dto.group.GroupResponse;
+import com.hackaton.exception.BadRequestException;
+import com.hackaton.exception.ResourceNotFoundException;
 import com.hackaton.model.Activity;
 import com.hackaton.model.Group;
 import com.hackaton.model.User;
@@ -42,7 +44,7 @@ public class AdminService {
         try {
             newRole = UserRole.valueOf(request.getRole());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid role. Must be USER or ADMIN");
+            throw new BadRequestException("Invalid role. Must be USER or ADMIN");
         }
 
         user.setRole(newRole);
@@ -65,7 +67,7 @@ public class AdminService {
     @Transactional
     public void deleteGroup(Long groupId) {
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
         groupRepository.delete(group);
     }
 
@@ -78,7 +80,7 @@ public class AdminService {
     @Transactional
     public void deleteActivity(Long activityId) {
         Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new IllegalArgumentException("Activity not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
         activityRepository.delete(activity);
     }
 
@@ -86,7 +88,7 @@ public class AdminService {
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private UserResponse toUserResponse(User user) {

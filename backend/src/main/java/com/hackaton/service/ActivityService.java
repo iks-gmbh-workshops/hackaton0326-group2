@@ -1,6 +1,9 @@
 package com.hackaton.service;
 
 import com.hackaton.dto.activity.*;
+import com.hackaton.exception.BadRequestException;
+import com.hackaton.exception.ForbiddenException;
+import com.hackaton.exception.ResourceNotFoundException;
 import com.hackaton.model.*;
 import com.hackaton.model.enums.GroupRole;
 import com.hackaton.model.enums.MemberStatus;
@@ -140,12 +143,12 @@ public class ActivityService {
         checkActivityEditPermission(activity, userId, userRole);
 
         if (!groupActivityRepository.existsByGroupIdAndActivityId(groupId, activityId)) {
-            throw new IllegalArgumentException("Group is not assigned to this activity");
+            throw new ResourceNotFoundException("Group is not assigned to this activity");
         }
 
         long assignedGroupCount = groupActivityRepository.findByActivityId(activityId).size();
         if (assignedGroupCount <= 1) {
-            throw new IllegalArgumentException("Cannot remove the last group from an activity");
+            throw new BadRequestException("Cannot remove the last group from an activity");
         }
 
         groupActivityRepository.deleteByGroupIdAndActivityId(groupId, activityId);
@@ -161,11 +164,11 @@ public class ActivityService {
         try {
             newStatus = com.hackaton.model.enums.ParticipationStatus.valueOf(request.getStatus());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid status. Must be ACCEPTED or DECLINED");
+            throw new BadRequestException("Invalid status. Must be ACCEPTED or DECLINED");
         }
 
         if (newStatus == com.hackaton.model.enums.ParticipationStatus.PENDING) {
-            throw new IllegalArgumentException("Cannot set status to PENDING");
+            throw new BadRequestException("Cannot set status to PENDING");
         }
 
         ActivityParticipant participant = activityParticipantRepository
@@ -204,7 +207,7 @@ public class ActivityService {
                         .isPresent());
 
         if (!hasAccess) {
-            throw new IllegalArgumentException("No access to this activity");
+            throw new ForbiddenException("No access to this activity");
         }
     }
 
@@ -221,7 +224,7 @@ public class ActivityService {
                 });
 
         if (!isVerwalter) {
-            throw new IllegalArgumentException("Only the creator, a Verwalter, or an Admin can edit this activity");
+            throw new ForbiddenException("Only the creator, a Verwalter, or an Admin can edit this activity");
         }
     }
 
@@ -231,7 +234,7 @@ public class ActivityService {
 
         groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("Not a member of this group"));
+                .orElseThrow(() -> new ForbiddenException("Not a member of this group"));
     }
 
     private void checkVerwalterOrAdmin(Long userId, Long groupId, UserRole userRole) {
@@ -239,26 +242,26 @@ public class ActivityService {
 
         GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
                 .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("Not a member of group " + groupId));
+                .orElseThrow(() -> new ForbiddenException("Not a member of group " + groupId));
 
         if (member.getRole() != GroupRole.VERWALTER) {
-            throw new IllegalArgumentException("Only Verwalter or Admin can create activities for group " + groupId);
+            throw new ForbiddenException("Only Verwalter or Admin can create activities for group " + groupId);
         }
     }
 
     private Activity findActivity(Long activityId) {
         return activityRepository.findById(activityId)
-                .orElseThrow(() -> new IllegalArgumentException("Activity not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
     }
 
     private Group findGroup(Long groupId) {
         return groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
     }
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private ActivityResponse toResponse(Activity activity) {

@@ -2,6 +2,8 @@ package com.hackaton.service;
 
 import com.hackaton.dto.user.UpdateProfileRequest;
 import com.hackaton.dto.user.UserResponse;
+import com.hackaton.exception.ConflictException;
+import com.hackaton.exception.ResourceNotFoundException;
 import com.hackaton.model.User;
 import com.hackaton.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,7 @@ public class UserService {
 
         if (StringUtils.hasText(request.getEmail()) && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("Email is already in use");
+                throw new ConflictException("Email is already in use");
             }
             user.setEmail(request.getEmail());
         }
@@ -53,7 +55,7 @@ public class UserService {
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private UserResponse toResponse(User user) {
