@@ -8,12 +8,13 @@ services:
       POSTGRES_DB: hackaton-b
       POSTGRES_USER: ${DB_USERNAME:-hackaton-b}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-hackaton-b}
+    command: ["-p", "5433"]
     ports:
-      - "5433:5432"
+      - "5433:5433"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-hackaton-b} -d hackaton-b"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-hackaton-b} -d hackaton-b -p 5433"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -28,7 +29,7 @@ services:
     environment:
       DB_USERNAME: ${DB_USERNAME:-hackaton-b}
       DB_PASSWORD: ${DB_PASSWORD:-hackaton-b}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hackaton-b
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5433/hackaton-b
       JWT_SECRET: ${JWT_SECRET:-changeme-in-production}
       MAIL_HOST: ${MAIL_HOST:-mailhog}
       MAIL_PORT: ${MAIL_PORT:-1025}
@@ -42,7 +43,7 @@ services:
       dockerfile: Dockerfile
     container_name: hackaton-b-frontend
     ports:
-      - "3000:80"
+      - "5173:5173"
     depends_on:
       - backend
 

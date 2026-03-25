@@ -3,7 +3,7 @@ spring:
     name: hackaton-b
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/hackaton-b
+    url: jdbc:postgresql://localhost:5433/hackaton-b
     username: ${DB_USERNAME:hackaton-b}
     password: ${DB_PASSWORD:hackaton-b}
     driver-class-name: org.postgresql.Driver
