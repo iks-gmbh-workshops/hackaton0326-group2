@@ -1,4 +1,4 @@
-# REme – Gruppen- & Aktivitäten-App
+#  Gruppen- & Aktivitäten-App
 
 ## Phase 1 – MVP (Kernfunktionalität)
 

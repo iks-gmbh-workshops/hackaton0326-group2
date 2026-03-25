@@ -1,6 +1,6 @@
-# REme Frontend - Vue 3 + Vite
+# Frontend - Vue 3 + Vite
 
-Single-Page-Application fuer REme (Gruppen, Aktivitaeten, Profilverwaltung).
+Single-Page-Application fuer Hackaton B (Gruppen, Aktivitaeten, Profilverwaltung).
 
 ## Features
 
