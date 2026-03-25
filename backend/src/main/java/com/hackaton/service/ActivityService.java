@@ -106,6 +106,45 @@ public class ActivityService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public ActivityResponse addGroupsToActivity(Long activityId, Long userId, UserRole userRole, List<Long> groupIds) {
+        Activity activity = findActivity(activityId);
+        checkActivityEditPermission(activity, userId, userRole);
+
+        for (Long groupId : groupIds) {
+            if (groupActivityRepository.existsByGroupIdAndActivityId(groupId, activityId)) {
+                continue;
+            }
+            checkVerwalterOrAdmin(userId, groupId, userRole);
+            Group group = findGroup(groupId);
+            GroupActivity ga = GroupActivity.builder()
+                    .group(group)
+                    .activity(activity)
+                    .build();
+            groupActivityRepository.save(ga);
+        }
+
+        // Refresh um neue GroupActivities zu laden
+        return toResponse(findActivity(activityId));
+    }
+
+    @Transactional
+    public void removeGroupFromActivity(Long activityId, Long groupId, Long userId, UserRole userRole) {
+        Activity activity = findActivity(activityId);
+        checkActivityEditPermission(activity, userId, userRole);
+
+        if (!groupActivityRepository.existsByGroupIdAndActivityId(groupId, activityId)) {
+            throw new IllegalArgumentException("Group is not assigned to this activity");
+        }
+
+        long assignedGroupCount = groupActivityRepository.findByActivityId(activityId).size();
+        if (assignedGroupCount <= 1) {
+            throw new IllegalArgumentException("Cannot remove the last group from an activity");
+        }
+
+        groupActivityRepository.deleteByGroupIdAndActivityId(groupId, activityId);
+    }
+
     // --- Hilfsmethoden ---
 
     private void checkActivityAccess(Activity activity, Long userId) {

@@ -1,6 +1,7 @@
 package com.hackaton.controller;
 
 import com.hackaton.dto.activity.ActivityResponse;
+import com.hackaton.dto.activity.AddGroupsRequest;
 import com.hackaton.dto.activity.CreateActivityRequest;
 import com.hackaton.dto.activity.UpdateActivityRequest;
 import com.hackaton.model.enums.UserRole;
@@ -50,6 +51,24 @@ public class ActivityController {
                                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
         UserRole userRole = UserRole.valueOf(extractRole(userDetails));
         activityService.deleteActivity(id, userDetails.getId(), userRole);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/groups")
+    public ResponseEntity<ActivityResponse> addGroupsToActivity(@PathVariable Long id,
+                                                                @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                @Valid @RequestBody AddGroupsRequest request) {
+        UserRole userRole = UserRole.valueOf(extractRole(userDetails));
+        ActivityResponse response = activityService.addGroupsToActivity(id, userDetails.getId(), userRole, request.getGroupIds());
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}/groups/{gid}")
+    public ResponseEntity<Void> removeGroupFromActivity(@PathVariable Long id,
+                                                         @PathVariable Long gid,
+                                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserRole userRole = UserRole.valueOf(extractRole(userDetails));
+        activityService.removeGroupFromActivity(id, gid, userDetails.getId(), userRole);
         return ResponseEntity.noContent().build();
     }
 
