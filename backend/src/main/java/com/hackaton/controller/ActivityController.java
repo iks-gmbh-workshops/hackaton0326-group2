@@ -1,9 +1,6 @@
 package com.hackaton.controller;
 
-import com.hackaton.dto.activity.ActivityResponse;
-import com.hackaton.dto.activity.AddGroupsRequest;
-import com.hackaton.dto.activity.CreateActivityRequest;
-import com.hackaton.dto.activity.UpdateActivityRequest;
+import com.hackaton.dto.activity.*;
 import com.hackaton.model.enums.UserRole;
 import com.hackaton.security.CustomUserDetails;
 import com.hackaton.service.ActivityService;
@@ -70,6 +67,21 @@ public class ActivityController {
         UserRole userRole = UserRole.valueOf(extractRole(userDetails));
         activityService.removeGroupFromActivity(id, gid, userDetails.getId(), userRole);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/respond")
+    public ResponseEntity<ParticipantResponse> respondToActivity(@PathVariable Long id,
+                                                                  @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                  @Valid @RequestBody RespondRequest request) {
+        ParticipantResponse response = activityService.respondToActivity(id, userDetails.getId(), request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/participants")
+    public ResponseEntity<List<ParticipantResponse>> getParticipants(@PathVariable Long id,
+                                                                     @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<ParticipantResponse> response = activityService.getParticipants(id, userDetails.getId());
+        return ResponseEntity.ok(response);
     }
 
     private String extractRole(CustomUserDetails userDetails) {

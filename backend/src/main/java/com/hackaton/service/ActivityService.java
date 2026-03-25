@@ -1,8 +1,6 @@
 package com.hackaton.service;
 
-import com.hackaton.dto.activity.ActivityResponse;
-import com.hackaton.dto.activity.CreateActivityRequest;
-import com.hackaton.dto.activity.UpdateActivityRequest;
+import com.hackaton.dto.activity.*;
 import com.hackaton.model.*;
 import com.hackaton.model.enums.GroupRole;
 import com.hackaton.model.enums.MemberStatus;
@@ -21,6 +19,7 @@ import java.util.stream.Collectors;
 public class ActivityService {
 
     private final ActivityRepository activityRepository;
+    private final ActivityParticipantRepository activityParticipantRepository;
     private final GroupRepository groupRepository;
     private final GroupActivityRepository groupActivityRepository;
     private final GroupMemberRepository groupMemberRepository;
@@ -145,6 +144,46 @@ public class ActivityService {
         groupActivityRepository.deleteByGroupIdAndActivityId(groupId, activityId);
     }
 
+    @Transactional
+    public ParticipantResponse respondToActivity(Long activityId, Long userId, RespondRequest request) {
+        Activity activity = findActivity(activityId);
+        checkActivityAccess(activity, userId);
+        User user = findUser(userId);
+
+        com.hackaton.model.enums.ParticipationStatus newStatus;
+        try {
+            newStatus = com.hackaton.model.enums.ParticipationStatus.valueOf(request.getStatus());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status. Must be ACCEPTED or DECLINED");
+        }
+
+        if (newStatus == com.hackaton.model.enums.ParticipationStatus.PENDING) {
+            throw new IllegalArgumentException("Cannot set status to PENDING");
+        }
+
+        ActivityParticipant participant = activityParticipantRepository
+                .findByActivityIdAndUserId(activityId, userId)
+                .orElseGet(() -> ActivityParticipant.builder()
+                        .activity(activity)
+                        .user(user)
+                        .build());
+
+        participant.setStatus(newStatus);
+        participant.setRespondedAt(java.time.LocalDateTime.now());
+        activityParticipantRepository.save(participant);
+
+        return toParticipantResponse(participant);
+    }
+
+    public List<ParticipantResponse> getParticipants(Long activityId, Long userId) {
+        Activity activity = findActivity(activityId);
+        checkActivityAccess(activity, userId);
+
+        return activityParticipantRepository.findByActivityId(activityId).stream()
+                .map(this::toParticipantResponse)
+                .collect(Collectors.toList());
+    }
+
     // --- Hilfsmethoden ---
 
     private void checkActivityAccess(Activity activity, Long userId) {
@@ -239,6 +278,16 @@ public class ActivityService {
                 .createdAt(activity.getCreatedAt())
                 .groups(groups)
                 .participantCount(participantCount)
+                .build();
+    }
+
+    private ParticipantResponse toParticipantResponse(ActivityParticipant ap) {
+        return ParticipantResponse.builder()
+                .userId(ap.getUser().getId())
+                .displayName(ap.getUser().getDisplayName())
+                .email(ap.getUser().getEmail())
+                .status(ap.getStatus().name())
+                .respondedAt(ap.getRespondedAt())
                 .build();
     }
 }
