@@ -21,10 +21,21 @@ spring:
     locations: classpath:db/migration
 
   mail:
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:1025}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: mail.iks-gmbh.com
+    port: 465
+    username: no-reply@iks-gmbh.com
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true          # SSL aktivieren
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+      default-encoding: UTF-8
 
 server:
   port: 8080

@@ -27,6 +27,7 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Transactional
     public GroupResponse createGroup(Long userId, CreateGroupRequest request) {
@@ -96,6 +97,38 @@ public class GroupService {
         return members.stream()
                 .map(this::toMemberResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void inviteMember(Long groupId, Long userId, UserRole userRole, InviteRequest request) {
+        Group group = findGroup(groupId);
+        checkVerwalterOrAdmin(userId, groupId, userRole);
+
+        emailService.sendGroupInvitation(request.getEmail(), group.getName(), group.getInviteToken());
+    }
+
+    @Transactional
+    public GroupResponse joinByToken(String inviteToken, Long userId) {
+        Group group = groupRepository.findByInviteToken(inviteToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid invite token"));
+
+        User user = findUser(userId);
+
+        if (groupMemberRepository.existsByUserIdAndGroupId(userId, group.getId())) {
+            throw new IllegalArgumentException("User is already a member of this group");
+        }
+
+        GroupMember member = GroupMember.builder()
+                .user(user)
+                .group(group)
+                .role(GroupRole.MITGLIED)
+                .status(MemberStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        groupMemberRepository.save(member);
+
+        return toResponse(group);
     }
 
     // --- Hilfsmethoden ---

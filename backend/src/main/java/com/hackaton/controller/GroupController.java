@@ -64,6 +64,23 @@ public class GroupController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<Void> inviteMember(@PathVariable Long id,
+                                             @AuthenticationPrincipal CustomUserDetails userDetails,
+                                             @Valid @RequestBody InviteRequest request) {
+        UserRole userRole = UserRole.valueOf(extractRole(userDetails));
+        groupService.inviteMember(id, userDetails.getId(), userRole, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/join")
+    public ResponseEntity<GroupResponse> joinGroup(@PathVariable Long id,
+                                                   @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                   @RequestParam String token) {
+        GroupResponse response = groupService.joinByToken(token, userDetails.getId());
+        return ResponseEntity.ok(response);
+    }
+
     private String extractRole(CustomUserDetails userDetails) {
         return userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
     }

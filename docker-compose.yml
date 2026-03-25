@@ -31,8 +31,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-hackaton-b}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5433/hackaton-b
       JWT_SECRET: ${JWT_SECRET:-changeme-in-production}
-      MAIL_HOST: ${MAIL_HOST:-mailhog}
-      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
