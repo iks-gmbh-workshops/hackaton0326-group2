@@ -1,5 +1,6 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 
+export const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS ?? 'false').toLowerCase() === 'true'
 export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 export const apiClient = axios.create({
