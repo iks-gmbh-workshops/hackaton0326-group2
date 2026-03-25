@@ -25,23 +25,37 @@
                 <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beschreibung</th>
                 <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Erstellt durch</th>
                 <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Anzahl der Mitglieder</th>
+                <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700">Aktion</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="isLoadingGroups">
-                <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
+                <td colspan="5" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
               </tr>
               <tr v-else-if="groupsError">
-                <td colspan="4" class="px-3 py-3 text-sm text-red-600">{{ groupsError }}</td>
+                <td colspan="5" class="px-3 py-3 text-sm text-red-600">{{ groupsError }}</td>
               </tr>
               <tr v-else-if="groups.length === 0">
-                <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Keine Gruppen vorhanden.</td>
+                <td colspan="5" class="px-3 py-3 text-sm text-gray-500">Keine Gruppen vorhanden.</td>
               </tr>
               <tr v-for="group in groups" v-else :key="group.id">
                 <td class="px-3 py-2 text-sm text-gray-900">{{ group.name }}</td>
                 <td class="px-3 py-2 text-sm text-gray-700">{{ group.description || '-' }}</td>
                 <td class="px-3 py-2 text-sm text-gray-700">{{ group.createdBy || '-' }}</td>
                 <td class="px-3 py-2 text-sm text-gray-700">{{ group.memberCount ?? '-' }}</td>
+                <td class="px-3 py-2 text-right">
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
+                    aria-label="Gruppe bearbeiten"
+                    :disabled="isSubmitting || isEditSubmitting"
+                    @click="openEditForm(group)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                      <path d="M13.586 2.586a2 2 0 0 1 2.828 2.828l-8.25 8.25a2 2 0 0 1-.878.513l-3 1a1 1 0 0 1-1.264-1.264l1-3a2 2 0 0 1 .513-.878l8.25-8.25Zm1.414 1.414a.5.5 0 0 0-.707 0L5.99 12.303a.5.5 0 0 0-.128.22l-.62 1.858 1.859-.62a.5.5 0 0 0 .219-.128L15.623 5.33A.5.5 0 0 0 15 4Z" />
+                    </svg>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -161,13 +175,131 @@
         </div>
       </form>
     </div>
+
+    <div
+      v-if="showEditForm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeEditForm"
+    >
+      <form
+        class="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl p-6 md:p-8 fade-in"
+        @submit.prevent="updateGroup"
+      >
+        <div class="flex items-start justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">Gruppe bearbeiten</h2>
+          <button
+            type="button"
+            class="text-gray-500 hover:text-gray-700 text-xl leading-none"
+            aria-label="Popup schliessen"
+            :disabled="isEditSubmitting"
+            @click="closeEditForm"
+          >
+            x
+          </button>
+        </div>
+        <p
+          v-if="editErrorMessage"
+          class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
+          {{ editErrorMessage }}
+        </p>
+
+        <p v-if="isLoadingEditData" class="mb-4 text-sm text-gray-500">Gruppendaten werden geladen...</p>
+
+        <div v-else class="space-y-5">
+          <div>
+            <label for="editGroupName" class="block text-sm font-medium text-gray-700 mb-1">
+              Gruppenname <span class="text-red-600">*</span>
+            </label>
+            <input
+              id="editGroupName"
+              v-model.trim="editForm.groupName"
+              type="text"
+              required
+              :disabled="isEditSubmitting"
+              placeholder="z. B. Laufgruppe Mittwoch"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label for="editDescription" class="block text-sm font-medium text-gray-700 mb-1">
+              Beschreibung (optional)
+            </label>
+            <textarea
+              id="editDescription"
+              v-model.trim="editForm.description"
+              rows="3"
+              :disabled="isEditSubmitting"
+              placeholder="Kurze Beschreibung der Gruppe"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label for="editMemberInput" class="block text-sm font-medium text-gray-700 mb-1">
+              Gruppenmitglieder hinzufuegen
+            </label>
+            <div class="flex gap-2">
+              <input
+                id="editMemberInput"
+                v-model.trim="editMemberInput"
+                type="text"
+                :disabled="isEditSubmitting"
+                placeholder="Benutzername oder E-Mail-Adresse"
+                class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                @keyup.enter.prevent="addEditMember"
+              />
+              <button
+                type="button"
+                :disabled="isEditSubmitting"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting }"
+                @click="addEditMember"
+              >
+                +
+              </button>
+            </div>
+
+            <ul v-if="editForm.members.length" class="mt-3 space-y-2">
+              <li
+                v-for="(member, index) in editForm.members"
+                :key="`${member}-${index}`"
+                class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700"
+              >
+                <span>{{ member }}</span>
+                <button
+                  type="button"
+                  :disabled="isEditSubmitting"
+                  class="text-red-600 hover:text-red-700"
+                  @click="removeEditMember(index)"
+                >
+                  Entfernen
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-5 border-t border-gray-200">
+          <button
+            type="submit"
+            :disabled="isEditSubmitting || isLoadingEditData"
+            class="w-full md:w-auto px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData }"
+          >
+            {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Aenderungen speichern' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, reactive, ref } from 'vue'
-import { groupService, type CreateGroupRequest, type Group } from '../api/groupService'
+import { groupService, type CreateGroupRequest, type Group, type UpdateGroupRequest } from '../api/groupService'
 
 const showCreateForm = ref(false)
 const memberInput = ref('')
@@ -177,8 +309,20 @@ const successMessage = ref('')
 const groups = ref<Group[]>([])
 const isLoadingGroups = ref(false)
 const groupsError = ref('')
+const showEditForm = ref(false)
+const editMemberInput = ref('')
+const isEditSubmitting = ref(false)
+const isLoadingEditData = ref(false)
+const editErrorMessage = ref('')
+const editingGroupId = ref<number | null>(null)
 
 const form = reactive({
+  groupName: '',
+  description: '',
+  members: [] as string[],
+})
+
+const editForm = reactive({
   groupName: '',
   description: '',
   members: [] as string[],
@@ -189,6 +333,14 @@ const resetForm = () => {
   form.description = ''
   form.members = []
   memberInput.value = ''
+}
+
+const resetEditForm = () => {
+  editForm.groupName = ''
+  editForm.description = ''
+  editForm.members = []
+  editMemberInput.value = ''
+  editingGroupId.value = null
 }
 
 const openCreateForm = () => {
@@ -204,6 +356,13 @@ const closeCreateForm = () => {
   showCreateForm.value = false
 }
 
+const closeEditForm = () => {
+  if (isEditSubmitting.value || isLoadingEditData.value) return
+  editErrorMessage.value = ''
+  showEditForm.value = false
+  resetEditForm()
+}
+
 const addMember = () => {
   const value = memberInput.value.trim()
   if (!value) return
@@ -214,6 +373,69 @@ const addMember = () => {
 
 const removeMember = (index: number) => {
   form.members.splice(index, 1)
+}
+
+const addEditMember = () => {
+  const value = editMemberInput.value.trim()
+  if (!value) return
+
+  editForm.members.push(value)
+  editMemberInput.value = ''
+}
+
+const removeEditMember = (index: number) => {
+  editForm.members.splice(index, 1)
+}
+
+const extractMembers = (groupDetails: unknown): string[] => {
+  if (!groupDetails || typeof groupDetails !== 'object') return []
+
+  const details = groupDetails as Record<string, unknown>
+  const rawMembers = details.members
+  if (!Array.isArray(rawMembers)) return []
+
+  return rawMembers
+    .map((member) => {
+      if (typeof member === 'string') return member
+      if (!member || typeof member !== 'object') return ''
+
+      const data = member as Record<string, unknown>
+      const candidate = data.username ?? data.email ?? data.name
+      return typeof candidate === 'string' ? candidate : ''
+    })
+    .filter((member) => member.length > 0)
+}
+
+const openEditForm = async (group: Group) => {
+  if (isSubmitting.value || isEditSubmitting.value) return
+
+  resetEditForm()
+  editErrorMessage.value = ''
+  successMessage.value = ''
+  showEditForm.value = true
+  isLoadingEditData.value = true
+
+  try {
+    const groupDetails = await groupService.getGroup(group.id)
+    const details = groupDetails as Group & { members?: unknown }
+
+    editingGroupId.value = group.id
+    editForm.groupName = (details.name || group.name || '').trim()
+    editForm.description = (details.description || group.description || '').trim()
+    editForm.members = extractMembers(details)
+  } catch (error) {
+    showEditForm.value = false
+    resetEditForm()
+
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      groupsError.value = backendMessage || 'Gruppendetails konnten nicht geladen werden.'
+    } else {
+      groupsError.value = 'Gruppendetails konnten nicht geladen werden.'
+    }
+  } finally {
+    isLoadingEditData.value = false
+  }
 }
 
 const loadGroups = async () => {
@@ -257,6 +479,38 @@ const createGroup = async () => {
     }
   } finally {
     isSubmitting.value = false
+  }
+}
+
+const updateGroup = async () => {
+  const groupId = editingGroupId.value
+  const name = editForm.groupName.trim()
+  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value) return
+
+  isEditSubmitting.value = true
+  editErrorMessage.value = ''
+
+  try {
+    const payload: UpdateGroupRequest = { name }
+    const description = editForm.description.trim()
+    if (description) payload.description = description
+    payload.members = [...editForm.members]
+
+    await groupService.updateGroup(groupId, payload)
+    await loadGroups()
+
+    successMessage.value = 'Gruppe wurde erfolgreich aktualisiert.'
+    showEditForm.value = false
+    resetEditForm()
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editErrorMessage.value = backendMessage || 'Gruppe konnte nicht aktualisiert werden.'
+    } else {
+      editErrorMessage.value = 'Gruppe konnte nicht aktualisiert werden.'
+    }
+  } finally {
+    isEditSubmitting.value = false
   }
 }
 

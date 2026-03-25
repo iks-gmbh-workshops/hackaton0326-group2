@@ -24,6 +24,12 @@ export interface CreateGroupRequest {
   members?: string[]
 }
 
+export interface UpdateGroupRequest {
+  name: string
+  description?: string
+  members?: string[]
+}
+
 export const groupService = {
   // Get all groups of current user
   getMyGroups: async (): Promise<Group[]> => {
@@ -61,6 +67,12 @@ export const groupService = {
         : payloadOrName
 
     const response = await api.post('/groups', payload)
+    return response.data
+  },
+
+  // Update an existing group
+  updateGroup: async (groupId: number, payload: UpdateGroupRequest): Promise<Group> => {
+    const response = await api.put(`/groups/${groupId}`, payload)
     return response.data
   }
 }
