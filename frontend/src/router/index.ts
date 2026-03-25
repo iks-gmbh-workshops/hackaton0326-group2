@@ -12,6 +12,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/Register.vue')
   },
   {
+    path: '/invite/:token',
+    name: 'InviteLanding',
+    component: () => import('../views/InviteLanding.vue')
+  },
+  {
     path: '/',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue')
@@ -56,13 +61,14 @@ const isAuthenticated = (): boolean => Boolean(localStorage.getItem('auth_token'
 router.beforeEach((to) => {
   const loggedIn = isAuthenticated()
   const isAuthPage = to.path === '/login' || to.path === '/register'
+  const redirectTarget = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
 
   if (!loggedIn && !isAuthPage) {
-    return { path: '/login' }
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
 
   if (loggedIn && isAuthPage) {
-    return { path: '/' }
+    return { path: redirectTarget }
   }
 
   return true

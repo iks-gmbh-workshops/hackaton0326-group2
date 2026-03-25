@@ -18,16 +18,27 @@ export interface GroupInvitation {
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED'
 }
 
+export interface GroupMember {
+  userId?: number
+  displayName?: string
+  email?: string
+  role?: string
+  status?: string
+  joinedAt?: string
+}
+
 export interface CreateGroupRequest {
   name: string
   description?: string
-  members?: string[]
 }
 
 export interface UpdateGroupRequest {
   name: string
   description?: string
-  members?: string[]
+}
+
+export interface InviteGroupMemberRequest {
+  email: string
 }
 
 export const groupService = {
@@ -59,6 +70,17 @@ export const groupService = {
     return response.data
   },
 
+  // Get members of a group
+  getGroupMembers: async (groupId: number): Promise<GroupMember[]> => {
+    const response = await api.get(`/groups/${groupId}/members`)
+    return response.data
+  },
+
+  // Remove a member from a group
+  removeGroupMember: async (groupId: number, userId: number): Promise<void> => {
+    await api.delete(`/groups/${groupId}/members/${userId}`)
+  },
+
   // Create a new group
   createGroup: async (payloadOrName: CreateGroupRequest | string, description = ''): Promise<Group> => {
     const payload: CreateGroupRequest =
@@ -73,6 +95,17 @@ export const groupService = {
   // Update an existing group
   updateGroup: async (groupId: number, payload: UpdateGroupRequest): Promise<Group> => {
     const response = await api.put(`/groups/${groupId}`, payload)
+    return response.data
+  },
+
+  // Invite a member to an existing group
+  inviteMember: async (groupId: number, payload: InviteGroupMemberRequest): Promise<void> => {
+    await api.post(`/groups/${groupId}/invite`, payload)
+  },
+
+  // Join a group via invitation token (backend currently expects a path id, but resolves by token)
+  joinByInviteToken: async (inviteToken: string): Promise<Group> => {
+    const response = await api.post(`/groups/0/join?token=${encodeURIComponent(inviteToken)}`)
     return response.data
   },
 

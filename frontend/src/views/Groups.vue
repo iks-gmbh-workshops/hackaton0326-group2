@@ -1,16 +1,16 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Gruppen</h1>
-    <p v-if="successMessage" class="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+    <h1 class="app-page-title mb-6">Gruppen</h1>
+    <p v-if="successMessage" class="app-alert-success mb-4">
       {{ successMessage }}
     </p>
     
     <div class="grid grid-cols-1 gap-6">
       <div class="bg-white rounded-lg shadow p-6 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-xl font-semibold text-gray-900">Meine Gruppen</h2>
+          <h2 class="app-card-title">Meine Gruppen</h2>
           <button
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            class="app-btn-primary"
             @click="openCreateForm"
           >
             + Neue Gruppe erstellen
@@ -18,32 +18,32 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full table-auto">
-            <thead class="bg-gray-50/70">
+          <table class="app-table">
+            <thead>
               <tr>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beschreibung</th>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Erstellt durch</th>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Anzahl der Mitglieder</th>
-                <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700">Aktion</th>
+                <th>Name</th>
+                <th>Beschreibung</th>
+                <th>Erstellt durch</th>
+                <th>Anzahl der Mitglieder</th>
+                <th class="app-table-col-right">Aktion</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="isLoadingGroups">
-                <td colspan="5" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
+                <td colspan="5" class="app-table-cell-muted">Lade Gruppen...</td>
               </tr>
               <tr v-else-if="groupsError">
-                <td colspan="5" class="px-3 py-3 text-sm text-red-600">{{ groupsError }}</td>
+                <td colspan="5" class="app-table-cell-error">{{ groupsError }}</td>
               </tr>
               <tr v-else-if="groups.length === 0">
-                <td colspan="5" class="px-3 py-3 text-sm text-gray-500">Keine Gruppen vorhanden.</td>
+                <td colspan="5" class="app-table-cell-muted">Keine Gruppen vorhanden.</td>
               </tr>
               <tr v-for="group in groups" v-else :key="group.id">
-                <td class="px-3 py-2 text-sm text-gray-900">{{ group.name }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700">{{ group.description || '-' }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700">{{ group.createdBy || '-' }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700">{{ group.memberCount ?? '-' }}</td>
-                <td class="px-3 py-2 text-right">
+                <td class="app-table-cell-main">{{ group.name }}</td>
+                <td>{{ group.description || '-' }}</td>
+                <td>{{ group.createdBy || '-' }}</td>
+                <td>{{ group.memberCount ?? '-' }}</td>
+                <td class="app-table-cell-right">
                   <button
                     type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
@@ -73,7 +73,7 @@
         @submit.prevent="createGroup"
       >
         <div class="flex items-start justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gray-900">Neue Gruppe anlegen</h2>
+          <h2 class="app-card-title">Neue Gruppe anlegen</h2>
           <button
             type="button"
             class="text-gray-500 hover:text-gray-700 text-xl leading-none"
@@ -84,7 +84,7 @@
             x
           </button>
         </div>
-        <p v-if="errorMessage" class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p v-if="errorMessage" class="app-alert-error mb-4">
           {{ errorMessage }}
         </p>
 
@@ -126,22 +126,23 @@
               <input
                 id="memberInput"
                 v-model.trim="memberInput"
-                type="text"
+                type="email"
                 :disabled="isSubmitting"
-                placeholder="Benutzername oder E-Mail-Adresse"
+                placeholder="mitglied@beispiel.de"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @keyup.enter.prevent="addMember"
               />
               <button
                 type="button"
                 :disabled="isSubmitting"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                class="app-btn-primary"
                 :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
                 @click="addMember"
               >
                 +
               </button>
             </div>
+            <p v-if="memberErrorMessage" class="mt-2 text-sm text-red-600">{{ memberErrorMessage }}</p>
 
             <ul v-if="form.members.length" class="mt-3 space-y-2">
               <li
@@ -167,7 +168,7 @@
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full md:w-auto px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            class="app-btn-success w-full md:w-auto"
             :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
           >
             {{ isSubmitting ? 'Gruppe wird angelegt...' : 'Gruppe anlegen' }}
@@ -186,7 +187,7 @@
         @submit.prevent="updateGroup"
       >
         <div class="flex items-start justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gray-900">Gruppe bearbeiten</h2>
+          <h2 class="app-card-title">Gruppe bearbeiten</h2>
           <button
             type="button"
             class="text-gray-500 hover:text-gray-700 text-xl leading-none"
@@ -199,7 +200,7 @@
         </div>
         <p
           v-if="editErrorMessage"
-          class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          class="app-alert-error mb-4"
         >
           {{ editErrorMessage }}
         </p>
@@ -244,58 +245,76 @@
               <input
                 id="editMemberInput"
                 v-model.trim="editMemberInput"
-                type="text"
-                :disabled="isEditSubmitting || isDeletingGroup"
-                placeholder="Benutzername oder E-Mail-Adresse"
+                type="email"
+                :disabled="isEditSubmitting || isDeletingGroup || isInvitingMember"
+                placeholder="mitglied@beispiel.de"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @keyup.enter.prevent="addEditMember"
               />
               <button
                 type="button"
-                :disabled="isEditSubmitting || isDeletingGroup"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup }"
+                :disabled="isEditSubmitting || isDeletingGroup || isInvitingMember"
+                class="app-btn-primary"
+                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup || isInvitingMember }"
                 @click="addEditMember"
               >
-                +
+                {{ isInvitingMember ? '...' : '+' }}
               </button>
             </div>
+            <p v-if="editMemberErrorMessage" class="mt-2 text-sm text-red-600">{{ editMemberErrorMessage }}</p>
 
-            <ul v-if="editForm.members.length" class="mt-3 space-y-2">
-              <li
-                v-for="(member, index) in editForm.members"
-                :key="`${member}-${index}`"
-                class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700"
-              >
-                <span>{{ member }}</span>
-                <button
-                  type="button"
-                  :disabled="isEditSubmitting || isDeletingGroup"
-                  class="text-red-600 hover:text-red-700"
-                  @click="removeEditMember(index)"
-                >
-                  Entfernen
-                </button>
-              </li>
-            </ul>
+            <div v-if="editForm.members.length" class="mt-3 overflow-x-auto">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>Mitglied</th>
+                    <th>Rolle</th>
+                    <th>Status</th>
+                    <th>Beitritt</th>
+                    <th class="app-table-col-right">Aktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(member, index) in editForm.members"
+                    :key="`${member.email || member.label}-${index}`"
+                  >
+                    <td class="app-table-cell-main">{{ member.label }}</td>
+                    <td>{{ member.role }}</td>
+                    <td>{{ member.statusLabel }}</td>
+                    <td>{{ member.joinedAtLabel }}</td>
+                    <td class="app-table-cell-right">
+                      <button
+                        type="button"
+                        :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember"
+                        class="text-red-600 hover:text-red-700"
+                        @click="removeEditMember(index)"
+                      >
+                        Entfernen
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         <div class="mt-8 pt-5 border-t border-gray-200 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <button
             type="button"
-            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
-            class="w-full md:w-auto px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
+            class="app-btn-danger w-full md:w-auto"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
             @click="deleteGroup"
           >
             {{ isDeletingGroup ? 'Gruppe wird geloescht...' : 'Gruppe loeschen' }}
           </button>
           <button
             type="submit"
-            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
-            class="w-full md:w-auto px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
+            class="app-btn-success w-full md:w-auto"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
           >
             {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Aenderungen speichern' }}
           </button>
@@ -323,8 +342,21 @@ const editMemberInput = ref('')
 const isEditSubmitting = ref(false)
 const isLoadingEditData = ref(false)
 const editErrorMessage = ref('')
+const memberErrorMessage = ref('')
+const editMemberErrorMessage = ref('')
+const isInvitingMember = ref(false)
+const isRemovingMember = ref(false)
 const editingGroupId = ref<number | null>(null)
 const isDeletingGroup = ref(false)
+
+interface GroupMemberRow {
+  userId: number | null
+  label: string
+  email: string
+  role: string
+  statusLabel: string
+  joinedAtLabel: string
+}
 
 const form = reactive({
   groupName: '',
@@ -335,14 +367,50 @@ const form = reactive({
 const editForm = reactive({
   groupName: '',
   description: '',
-  members: [] as string[],
+  members: [] as GroupMemberRow[],
 })
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const normalizeEmail = (value: string): string => value.trim().toLowerCase()
+
+const isValidEmail = (value: string): boolean => EMAIL_REGEX.test(normalizeEmail(value))
+
+const resolveGroupId = (group: unknown): number | null => {
+  if (!group || typeof group !== 'object') return null
+  const record = group as Record<string, unknown>
+  const candidate = record.id ?? record.groupId
+  const parsed = Number(candidate)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const formatDateLabel = (value: unknown): string => {
+  if (typeof value !== 'string' || !value.trim()) return '-'
+  const parsedDate = new Date(value)
+  if (Number.isNaN(parsedDate.getTime())) return '-'
+
+  return parsedDate.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const asString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+const formatMemberStatus = (value: unknown): string => {
+  const status = asString(value).toUpperCase()
+  if (status === 'ACTIVE') return 'Aktiv (ACTIVE)'
+  if (status === 'PENDING') return 'Warten auf Rueckmeldung (PENDING)'
+  return status ? `${status}` : '-'
+}
 
 const resetForm = () => {
   form.groupName = ''
   form.description = ''
   form.members = []
   memberInput.value = ''
+  memberErrorMessage.value = ''
 }
 
 const resetEditForm = () => {
@@ -350,6 +418,7 @@ const resetEditForm = () => {
   editForm.description = ''
   editForm.members = []
   editMemberInput.value = ''
+  editMemberErrorMessage.value = ''
   editingGroupId.value = null
 }
 
@@ -367,7 +436,7 @@ const closeCreateForm = () => {
 }
 
 const closeEditForm = () => {
-  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value) return
+  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value || isRemovingMember.value) return
   editErrorMessage.value = ''
   showEditForm.value = false
   resetEditForm()
@@ -376,48 +445,156 @@ const closeEditForm = () => {
 const addMember = () => {
   const value = memberInput.value.trim()
   if (!value) return
+  const normalizedValue = normalizeEmail(value)
 
-  form.members.push(value)
+  if (!isValidEmail(normalizedValue)) {
+    memberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
+    return
+  }
+
+  const alreadyAdded = form.members.some((member) => normalizeEmail(member) === normalizedValue)
+  if (alreadyAdded) {
+    memberErrorMessage.value = 'Diese E-Mail-Adresse wurde bereits hinzugefuegt.'
+    return
+  }
+
+  form.members.push(normalizedValue)
   memberInput.value = ''
+  memberErrorMessage.value = ''
 }
 
 const removeMember = (index: number) => {
   form.members.splice(index, 1)
 }
 
-const addEditMember = () => {
+const addEditMember = async () => {
+  if (isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+
   const value = editMemberInput.value.trim()
   if (!value) return
+  const normalizedValue = normalizeEmail(value)
+  const groupId = editingGroupId.value
+  if (!groupId) return
 
-  editForm.members.push(value)
-  editMemberInput.value = ''
+  if (!isValidEmail(normalizedValue)) {
+    editMemberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
+    return
+  }
+
+  const alreadyAdded = editForm.members.some((member) => normalizeEmail(member.email) === normalizedValue)
+  if (alreadyAdded) {
+    editMemberErrorMessage.value = 'Diese E-Mail-Adresse ist bereits Mitglied oder eingeladen.'
+    return
+  }
+
+  isInvitingMember.value = true
+  editMemberErrorMessage.value = ''
+
+  try {
+    await groupService.inviteMember(groupId, { email: normalizedValue })
+    editForm.members.push({
+      userId: null,
+      label: normalizedValue,
+      email: normalizedValue,
+      role: 'MITGLIED',
+      statusLabel: 'Warten auf Rueckmeldung (PENDING)',
+      joinedAtLabel: '-'
+    })
+    editMemberInput.value = ''
+    successMessage.value = `Einladung an ${normalizedValue} wurde versendet.`
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht hinzugefuegt werden.'
+    } else {
+      editMemberErrorMessage.value = 'Mitglied konnte nicht hinzugefuegt werden.'
+    }
+  } finally {
+    isInvitingMember.value = false
+  }
 }
 
-const removeEditMember = (index: number) => {
-  editForm.members.splice(index, 1)
+const removeEditMember = async (index: number) => {
+  if (isRemovingMember.value || isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+
+  const groupId = editingGroupId.value
+  const member = editForm.members[index]
+  if (!groupId || !member) return
+
+  if (member.userId === null) {
+    editForm.members.splice(index, 1)
+    return
+  }
+
+  const confirmed = window.confirm(`Mitglied ${member.label} wirklich entfernen?`)
+  if (!confirmed) return
+
+  isRemovingMember.value = true
+  editMemberErrorMessage.value = ''
+
+  try {
+    await groupService.removeGroupMember(groupId, member.userId)
+    editForm.members.splice(index, 1)
+    successMessage.value = `${member.label} wurde aus der Gruppe entfernt.`
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht entfernt werden.'
+    } else {
+      editMemberErrorMessage.value = 'Mitglied konnte nicht entfernt werden.'
+    }
+  } finally {
+    isRemovingMember.value = false
+  }
 }
 
-const extractMembers = (groupDetails: unknown): string[] => {
-  if (!groupDetails || typeof groupDetails !== 'object') return []
+const extractMembers = (membersPayload: unknown): GroupMemberRow[] => {
+  if (!Array.isArray(membersPayload)) return []
 
-  const details = groupDetails as Record<string, unknown>
-  const rawMembers = details.members
-  if (!Array.isArray(rawMembers)) return []
-
-  return rawMembers
+  return membersPayload
     .map((member) => {
-      if (typeof member === 'string') return member
-      if (!member || typeof member !== 'object') return ''
+      if (typeof member === 'string') {
+        const email = asString(member)
+        return {
+          userId: null,
+          label: email || '-',
+          email,
+          role: 'MITGLIED',
+          statusLabel: '-',
+          joinedAtLabel: '-'
+        }
+      }
+      if (!member || typeof member !== 'object') return null
 
       const data = member as Record<string, unknown>
-      const candidate = data.username ?? data.email ?? data.name
-      return typeof candidate === 'string' ? candidate : ''
+      const displayName =
+        asString(data.displayName) ||
+        asString(data.username) ||
+        asString(data.name) ||
+        asString(data.fullName)
+      const email = asString(data.email) || asString(data.userEmail)
+      const role =
+        asString(data.role) ||
+        asString(data.memberRole) ||
+        asString(data.groupRole) ||
+        'MITGLIED'
+      const status = data.status ?? data.memberStatus ?? data.invitationStatus
+      const joinedAtRaw = data.joinedAt ?? data.createdAt ?? data.memberSince ?? data.joinDate
+
+      return {
+        userId: Number.isFinite(Number(data.userId)) ? Number(data.userId) : null,
+        label: displayName || email || '-',
+        email,
+        role,
+        statusLabel: formatMemberStatus(status),
+        joinedAtLabel: formatDateLabel(joinedAtRaw)
+      }
     })
-    .filter((member) => member.length > 0)
+    .filter((member): member is GroupMemberRow => Boolean(member))
 }
 
 const openEditForm = async (group: Group) => {
-  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value) return
+  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value || isRemovingMember.value) return
 
   resetEditForm()
   editErrorMessage.value = ''
@@ -426,13 +603,15 @@ const openEditForm = async (group: Group) => {
   isLoadingEditData.value = true
 
   try {
-    const groupDetails = await groupService.getGroup(group.id)
-    const details = groupDetails as Group & { members?: unknown }
+    const [groupDetails, groupMembers] = await Promise.all([
+      groupService.getGroup(group.id),
+      groupService.getGroupMembers(group.id)
+    ])
 
     editingGroupId.value = group.id
-    editForm.groupName = (details.name || group.name || '').trim()
-    editForm.description = (details.description || group.description || '').trim()
-    editForm.members = extractMembers(details)
+    editForm.groupName = (groupDetails.name || group.name || '').trim()
+    editForm.description = (groupDetails.description || group.description || '').trim()
+    editForm.members = extractMembers(groupMembers)
   } catch (error) {
     showEditForm.value = false
     resetEditForm()
@@ -467,17 +646,33 @@ const createGroup = async () => {
 
   isSubmitting.value = true
   errorMessage.value = ''
+  memberErrorMessage.value = ''
 
   try {
     const payload: CreateGroupRequest = { name }
     const description = form.description.trim()
     if (description) payload.description = description
-    if (form.members.length) payload.members = [...form.members]
+    const createdGroup = await groupService.createGroup(payload)
+    const groupId = resolveGroupId(createdGroup)
 
-    await groupService.createGroup(payload)
+    if (groupId && form.members.length) {
+      const inviteResults = await Promise.allSettled(
+        form.members.map((email) => groupService.inviteMember(groupId, { email: normalizeEmail(email) }))
+      )
+      const failedInvites = inviteResults.filter((result) => result.status === 'rejected').length
+      if (failedInvites > 0) {
+        successMessage.value = `Gruppe angelegt, aber ${failedInvites} Einladung(en) konnten nicht versendet werden.`
+      } else {
+        successMessage.value = 'Gruppe wurde erfolgreich angelegt und Einladungen wurden versendet.'
+      }
+    } else if (!groupId && form.members.length) {
+      successMessage.value = 'Gruppe wurde angelegt. Einladungen konnten nicht automatisch versendet werden.'
+    } else {
+      successMessage.value = 'Gruppe wurde erfolgreich angelegt.'
+    }
+
     await loadGroups()
 
-    successMessage.value = 'Gruppe wurde erfolgreich angelegt.'
     showCreateForm.value = false
     resetForm()
   } catch (error) {
@@ -495,7 +690,7 @@ const createGroup = async () => {
 const updateGroup = async () => {
   const groupId = editingGroupId.value
   const name = editForm.groupName.trim()
-  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value) return
+  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value || isRemovingMember.value) return
 
   isEditSubmitting.value = true
   editErrorMessage.value = ''
@@ -504,7 +699,6 @@ const updateGroup = async () => {
     const payload: UpdateGroupRequest = { name }
     const description = editForm.description.trim()
     if (description) payload.description = description
-    payload.members = [...editForm.members]
 
     await groupService.updateGroup(groupId, payload)
     await loadGroups()

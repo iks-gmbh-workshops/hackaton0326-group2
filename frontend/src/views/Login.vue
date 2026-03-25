@@ -1,6 +1,6 @@
 <template>
   <div class="mx-auto max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-    <h1 class="mb-6 text-2xl font-bold text-gray-900">Anmeldung</h1>
+    <h1 class="app-section-title mb-6">Anmeldung</h1>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
       <EmailField
@@ -21,23 +21,23 @@
       <button
         type="submit"
         :disabled="isSubmitting"
-        class="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+        class="app-btn-auth"
         :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
       >
         {{ isSubmitting ? 'Anmeldung laeuft...' : 'Anmelden' }}
       </button>
     </form>
 
-    <p v-if="successMessage" class="mt-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+    <p v-if="successMessage" class="app-alert-success mt-4">
       {{ successMessage }}
     </p>
-    <p v-if="errorMessage" class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <p v-if="errorMessage" class="app-alert-error mt-4">
       {{ errorMessage }}
     </p>
 
     <p class="mt-4 text-center text-sm text-gray-600">
       Noch kein Konto?
-      <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-700">
+      <router-link to="/register" class="app-link-primary">
         Registrieren
       </router-link>
     </p>
@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PasswordFiled from '@/components/fields/PasswordFiled.vue'
 import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
@@ -59,6 +59,7 @@ const isSubmitting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
+const route = useRoute()
 
 const onSubmit = async () => {
   if (isSubmitting.value) return
@@ -79,7 +80,8 @@ const onSubmit = async () => {
     localStorage.setItem('auth_display_name', response.displayName)
 
     successMessage.value = 'Anmeldung erfolgreich'
-    await router.push('/')
+    const redirectTarget = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    await router.push(redirectTarget)
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message

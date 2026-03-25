@@ -1,14 +1,14 @@
 <template>
   <div class="mx-auto max-w-3xl space-y-6">
     <div class="border-b border-gray-200 pb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Profilverwaltung</h1>
-      <p class="mt-2 text-gray-600">Bearbeite hier deine Profildaten.</p>
+      <h1 class="app-page-title">Profilverwaltung</h1>
+      <p class="app-muted-text mt-2">Bearbeite hier deine Profildaten.</p>
     </div>
 
-      <p v-if="successMessage" class="mt-6 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+      <p v-if="successMessage" class="app-alert-success mt-6">
         {{ successMessage }}
       </p>
-      <p v-if="errorMessage" class="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <p v-if="errorMessage" class="app-alert-error mt-3">
         {{ errorMessage }}
       </p>
 
@@ -65,7 +65,7 @@
       <div class="mt-6 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          class="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+          class="app-btn-primary-md"
           :class="{ 'cursor-not-allowed opacity-70': isSaving || isDeleting }"
           :disabled="isSaving || isDeleting"
           @click="saveProfile"
@@ -76,7 +76,7 @@
         <button
           v-if="hasChanges"
           type="button"
-          class="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
+          class="app-btn-danger-md"
           @click="discardChanges"
         >
           Änderungen verwerfen
@@ -86,7 +86,7 @@
       <div class="mt-4">
         <button
           type="button"
-          class="rounded-md border border-red-300 bg-white px-4 py-2 font-medium text-red-700 hover:bg-red-50"
+          class="app-btn-danger-outline"
           :class="{ 'cursor-not-allowed opacity-70': isDeleting || isSaving }"
           :disabled="isDeleting || isSaving"
           @click="deleteProfile"

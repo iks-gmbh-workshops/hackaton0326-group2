@@ -1,0 +1,107 @@
+.app-page-title {
+  @apply text-3xl font-bold text-gray-900;
+}
+
+.app-section-title {
+  @apply text-2xl font-semibold text-gray-900;
+}
+
+.app-card-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.app-subsection-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.app-muted-text {
+  @apply text-gray-600;
+}
+
+.app-link-primary {
+  @apply font-medium text-blue-600 hover:text-blue-700;
+}
+
+.app-alert-success {
+  @apply rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700;
+}
+
+.app-alert-error {
+  @apply rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700;
+}
+
+.app-btn-primary {
+  @apply rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700;
+}
+
+.app-btn-success {
+  @apply rounded-lg bg-green-600 px-4 py-2 text-white transition hover:bg-green-700;
+}
+
+.app-btn-danger {
+  @apply rounded-lg bg-red-600 px-4 py-2 text-white transition hover:bg-red-700;
+}
+
+.app-btn-primary-md {
+  @apply rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700;
+}
+
+.app-btn-danger-md {
+  @apply rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700;
+}
+
+.app-btn-primary-sm {
+  @apply rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700;
+}
+
+.app-btn-success-sm {
+  @apply rounded bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700;
+}
+
+.app-btn-danger-sm {
+  @apply rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700;
+}
+
+.app-btn-auth {
+  @apply w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700;
+}
+
+.app-btn-danger-outline {
+  @apply rounded-md border border-red-300 bg-white px-4 py-2 font-medium text-red-700 hover:bg-red-50;
+}
+
+.app-table {
+  @apply w-full table-auto;
+}
+
+.app-table thead {
+  @apply bg-gray-50/70;
+}
+
+.app-table th {
+  @apply px-3 py-2 text-left text-sm font-semibold text-gray-700;
+}
+
+.app-table th.app-table-col-right {
+  @apply text-right;
+}
+
+.app-table td {
+  @apply px-3 py-2 text-sm text-gray-700;
+}
+
+.app-table td.app-table-cell-main {
+  @apply text-gray-900;
+}
+
+.app-table td.app-table-cell-right {
+  @apply text-right;
+}
+
+.app-table td.app-table-cell-muted {
+  @apply py-3 text-gray-500;
+}
+
+.app-table td.app-table-cell-error {
+  @apply py-3 text-red-600;
+}
