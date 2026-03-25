@@ -310,15 +310,44 @@
                     <td>{{ member.statusLabel }}</td>
                     <td>{{ member.joinedAtLabel }}</td>
                     <td v-if="!isViewOnlyMode" class="app-table-cell-right">
-                      <button
-                        v-if="!isViewOnlyMode"
-                        type="button"
-                        :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember"
-                        class="text-red-600 hover:text-red-700"
-                        @click="removeEditMember(index)"
-                      >
-                        Entfernen
-                      </button>
+                      <div class="inline-flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          :title="'Zum Verwalter machen'"
+                          aria-label="Zum Verwalter machen"
+                          :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember || isUpdatingMemberRole || !canPromoteMember(member)"
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          @click="promoteEditMember(index)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                            <path d="M10 2a4 4 0 0 0-4 4v1.086A3.5 3.5 0 0 0 3.5 10.5v4A3.5 3.5 0 0 0 7 18h6a3.5 3.5 0 0 0 3.5-3.5v-4A3.5 3.5 0 0 0 14 7.086V6a4 4 0 0 0-4-4Zm-2.5 5V6a2.5 2.5 0 0 1 5 0v1H7.5ZM13 9a1 1 0 0 1 .95.684l.113.346h.364a1 1 0 0 1 .588 1.809l-.294.214.112.347a1 1 0 0 1-1.538 1.118L13 13.303l-.295.215a1 1 0 0 1-1.538-1.118l.113-.347-.295-.214a1 1 0 0 1 .589-1.809h.364l.113-.346A1 1 0 0 1 13 9Z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          :title="'Verwalterrechte entziehen'"
+                          aria-label="Verwalterrechte entziehen"
+                          :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember || isUpdatingMemberRole || !canDemoteMember(member)"
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          @click="demoteEditMember(index)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                            <path d="M10 2a4 4 0 0 0-4 4v1.086A3.5 3.5 0 0 0 3.5 10.5v4A3.5 3.5 0 0 0 7 18h6a3.5 3.5 0 0 0 3.5-3.5v-4A3.5 3.5 0 0 0 14 7.086V6a4 4 0 0 0-4-4Zm-2.5 5V6a2.5 2.5 0 0 1 5 0v1H7.5Zm2.5 4a.75.75 0 0 1 .75.75V12h1a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1 0-1.5h1v-.25A.75.75 0 0 1 10 11Z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          :title="'Mitglied entfernen'"
+                          aria-label="Mitglied entfernen"
+                          :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember || isUpdatingMemberRole"
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          @click="removeEditMember(index)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                            <path fill-rule="evenodd" d="M8.75 2.5a1.5 1.5 0 0 0-1.5 1.5V5H5.5a.75.75 0 0 0 0 1.5h.286l.603 8.243A2 2 0 0 0 8.384 16.6h3.232a2 2 0 0 0 1.995-1.857l.603-8.243h.286a.75.75 0 0 0 0-1.5h-1.75V4a1.5 1.5 0 0 0-1.5-1.5h-2.5Zm2.5 2.5V4h-2.5v1h2.5Zm-2 3a.75.75 0 0 0-1.5 0v5a.75.75 0 0 0 1.5 0V8Zm3.5-.75a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-1.5 0V8a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -383,18 +412,18 @@
         >
           <button
             type="button"
-            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember || isUpdatingMemberRole"
             class="app-btn-danger w-full md:w-auto"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember || isUpdatingMemberRole }"
             @click="deleteGroup"
           >
             {{ isDeletingGroup ? 'Gruppe wird gelöscht...' : 'Gruppe löschen' }}
           </button>
           <button
             type="submit"
-            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember || isUpdatingMemberRole"
             class="app-btn-success w-full md:w-auto"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember || isUpdatingMemberRole }"
           >
             {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Änderungen speichern' }}
           </button>
@@ -494,6 +523,9 @@ const memberErrorMessage = ref('')
 const editMemberErrorMessage = ref('')
 const isInvitingMember = ref(false)
 const isRemovingMember = ref(false)
+const isUpdatingMemberRole = ref(false)
+const initialEditMembers = ref<GroupMemberRow[]>([])
+const pendingInviteEmails = ref<string[]>([])
 const editingGroupId = ref<number | null>(null)
 const isDeletingGroup = ref(false)
 const isViewOnlyMode = ref(false)
@@ -539,6 +571,8 @@ const editForm = reactive({
   description: '',
   members: [] as GroupMemberRow[],
 })
+
+const cloneMemberRows = (members: GroupMemberRow[]): GroupMemberRow[] => members.map((member) => ({ ...member }))
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -603,6 +637,21 @@ const formatMemberStatus = (value: unknown): string => {
   return status ? `${status}` : '-'
 }
 
+const normalizeMemberRole = (value: unknown): 'VERWALTER' | 'MITGLIED' | '' => {
+  const role = asString(value).toUpperCase()
+  if (role === 'VERWALTER') return 'VERWALTER'
+  if (role === 'MITGLIED') return 'MITGLIED'
+  return ''
+}
+
+const canPromoteMember = (member: GroupMemberRow): boolean => {
+  return member.userId !== null && normalizeMemberRole(member.role) === 'MITGLIED'
+}
+
+const canDemoteMember = (member: GroupMemberRow): boolean => {
+  return member.userId !== null && normalizeMemberRole(member.role) === 'VERWALTER'
+}
+
 const loadCurrentUserId = async (): Promise<void> => {
   if (currentUserId.value !== null) return
   try {
@@ -655,6 +704,8 @@ const resetEditForm = () => {
   editForm.groupName = ''
   editForm.description = ''
   editForm.members = []
+  initialEditMembers.value = []
+  pendingInviteEmails.value = []
   groupActivities.value = []
   groupActivitiesError.value = ''
   updatingActivityStatus.value = {}
@@ -678,7 +729,7 @@ const closeCreateForm = () => {
 }
 
 const closeEditForm = () => {
-  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value || isRemovingMember.value) return
+  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value || isRemovingMember.value || isUpdatingMemberRole.value) return
   editErrorMessage.value = ''
   showEditForm.value = false
   resetEditForm()
@@ -723,9 +774,9 @@ const removeMember = (index: number) => {
   form.members.splice(index, 1)
 }
 
-const addEditMember = async () => {
+const addEditMember = () => {
   if (isViewOnlyMode.value) return
-  if (isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+  if (isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
 
   const value = editMemberInput.value.trim()
   if (!value) return
@@ -734,7 +785,7 @@ const addEditMember = async () => {
   if (!groupId) return
 
   if (!isValidEmail(normalizedValue)) {
-    editMemberErrorMessage.value = 'Bitte gib eine gültige E-Mail-Adresse ein.'
+    editMemberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
     return
   }
 
@@ -744,42 +795,54 @@ const addEditMember = async () => {
     return
   }
 
-  isInvitingMember.value = true
   editMemberErrorMessage.value = ''
+  editForm.members.push({
+    userId: null,
+    label: normalizedValue,
+    email: normalizedValue,
+    role: 'MITGLIED',
+    statusLabel: 'Warten auf Rueckmeldung',
+    joinedAtLabel: '-'
+  })
 
-  try {
-    await groupService.inviteMember(groupId, { email: normalizedValue })
-    editForm.members.push({
-      userId: null,
-      label: normalizedValue,
-      email: normalizedValue,
-      role: 'MITGLIED',
-      statusLabel: 'Warten auf Rueckmeldung',
-      joinedAtLabel: '-'
-    })
-    editMemberInput.value = ''
-    successMessage.value = `Einladung an ${normalizedValue} wurde versendet.`
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht hinzugefügt werden.'
-    } else {
-      editMemberErrorMessage.value = 'Mitglied konnte nicht hinzugefügt werden.'
-    }
-  } finally {
-    isInvitingMember.value = false
+  if (!pendingInviteEmails.value.includes(normalizedValue)) {
+    pendingInviteEmails.value.push(normalizedValue)
   }
+
+  editMemberInput.value = ''
 }
 
-const removeEditMember = async (index: number) => {
+const updateEditMemberRole = (index: number, nextRole: 'VERWALTER' | 'MITGLIED') => {
   if (isViewOnlyMode.value) return
-  if (isRemovingMember.value || isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+  if (isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
 
-  const groupId = editingGroupId.value
   const member = editForm.members[index]
-  if (!groupId || !member) return
+  if (!member || member.userId === null) return
+
+  const currentRole = normalizeMemberRole(member.role)
+  if (!currentRole || currentRole === nextRole) return
+
+  member.role = nextRole
+}
+
+const promoteEditMember = (index: number) => {
+  updateEditMemberRole(index, 'VERWALTER')
+}
+
+const demoteEditMember = (index: number) => {
+  updateEditMemberRole(index, 'MITGLIED')
+}
+
+const removeEditMember = (index: number) => {
+  if (isViewOnlyMode.value) return
+  if (isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+
+  const member = editForm.members[index]
+  if (!member) return
 
   if (member.userId === null) {
+    const memberEmail = normalizeEmail(member.email)
+    pendingInviteEmails.value = pendingInviteEmails.value.filter((email) => email !== memberEmail)
     editForm.members.splice(index, 1)
     return
   }
@@ -787,23 +850,8 @@ const removeEditMember = async (index: number) => {
   const confirmed = window.confirm(`Mitglied ${member.label} wirklich entfernen?`)
   if (!confirmed) return
 
-  isRemovingMember.value = true
   editMemberErrorMessage.value = ''
-
-  try {
-    await groupService.removeGroupMember(groupId, member.userId)
-    editForm.members.splice(index, 1)
-    successMessage.value = `${member.label} wurde aus der Gruppe entfernt.`
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht entfernt werden.'
-    } else {
-      editMemberErrorMessage.value = 'Mitglied konnte nicht entfernt werden.'
-    }
-  } finally {
-    isRemovingMember.value = false
-  }
+  editForm.members.splice(index, 1)
 }
 
 const extractMembers = (membersPayload: unknown): GroupMemberRow[] => {
@@ -958,8 +1006,51 @@ const updateParticipationStatus = async (activityId: number, rawStatus: string) 
   }
 }
 
+const applyEditMemberChanges = async (groupId: number): Promise<{ invited: number; removed: number; roleUpdated: number }> => {
+  const initialByUserId = new Map<number, GroupMemberRow>()
+  for (const member of initialEditMembers.value) {
+    if (member.userId !== null) initialByUserId.set(member.userId, member)
+  }
+
+  const currentByUserId = new Map<number, GroupMemberRow>()
+  for (const member of editForm.members) {
+    if (member.userId !== null) currentByUserId.set(member.userId, member)
+  }
+
+  let removed = 0
+  for (const [userId] of initialByUserId) {
+    if (!currentByUserId.has(userId)) {
+      await groupService.removeGroupMember(groupId, userId)
+      removed += 1
+    }
+  }
+
+  let roleUpdated = 0
+  for (const [userId, currentMember] of currentByUserId) {
+    const initialMember = initialByUserId.get(userId)
+    if (!initialMember) continue
+    const initialRole = normalizeMemberRole(initialMember.role)
+    const currentRole = normalizeMemberRole(currentMember.role)
+    if (!currentRole || initialRole === currentRole) continue
+    await groupService.updateGroupMemberRole(groupId, userId, { role: currentRole })
+    roleUpdated += 1
+  }
+
+  let invited = 0
+  for (const email of pendingInviteEmails.value) {
+    const isStillPending = editForm.members.some(
+      (member) => member.userId === null && normalizeEmail(member.email) === email
+    )
+    if (!isStillPending) continue
+    await groupService.inviteMember(groupId, { email })
+    invited += 1
+  }
+
+  return { invited, removed, roleUpdated }
+}
+
 const openGroupForm = async (group: Group, viewOnly: boolean) => {
-  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value || isRemovingMember.value) return
+  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value || isRemovingMember.value || isUpdatingMemberRole.value) return
   if (!viewOnly && !canEditGroup(group.id)) return
 
   resetEditForm()
@@ -980,6 +1071,8 @@ const openGroupForm = async (group: Group, viewOnly: boolean) => {
     editForm.groupName = (groupDetails.name || group.name || '').trim()
     editForm.description = (groupDetails.description || group.description || '').trim()
     editForm.members = extractMembers(groupMembers)
+    initialEditMembers.value = cloneMemberRows(editForm.members)
+    pendingInviteEmails.value = []
     await loadGroupActivities(group.id)
   } catch (error) {
     showEditForm.value = false
@@ -1095,7 +1188,7 @@ const updateGroup = async () => {
   if (isViewOnlyMode.value) return
   const groupId = editingGroupId.value
   const name = editForm.groupName.trim()
-  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value || isRemovingMember.value) return
+  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value || isRemovingMember.value || isUpdatingMemberRole.value) return
 
   isEditSubmitting.value = true
   editErrorMessage.value = ''
@@ -1106,9 +1199,17 @@ const updateGroup = async () => {
     if (description) payload.description = description
 
     await groupService.updateGroup(groupId, payload)
+    const changeSummary = await applyEditMemberChanges(groupId)
     await loadGroups()
 
-    successMessage.value = 'Gruppe wurde erfolgreich aktualisiert.'
+    const summaryParts: string[] = []
+    if (changeSummary.roleUpdated > 0) summaryParts.push(`${changeSummary.roleUpdated} Rolle(n) angepasst`)
+    if (changeSummary.removed > 0) summaryParts.push(`${changeSummary.removed} Mitglied(er) entfernt`)
+    if (changeSummary.invited > 0) summaryParts.push(`${changeSummary.invited} Einladung(en) versendet`)
+    successMessage.value =
+      summaryParts.length > 0
+        ? `Gruppe wurde erfolgreich aktualisiert (${summaryParts.join(', ')}).`
+        : 'Gruppe wurde erfolgreich aktualisiert.'
     showEditForm.value = false
     resetEditForm()
   } catch (error) {
@@ -1126,7 +1227,7 @@ const updateGroup = async () => {
 const deleteGroup = async () => {
   if (isViewOnlyMode.value) return
   const groupId = editingGroupId.value
-  if (!groupId || isDeletingGroup.value || isEditSubmitting.value || isLoadingEditData.value) return
+  if (!groupId || isDeletingGroup.value || isEditSubmitting.value || isLoadingEditData.value || isRemovingMember.value || isUpdatingMemberRole.value) return
 
   const confirmed = window.confirm('Möchtest du diese Gruppe wirklich löschen?')
   if (!confirmed) return

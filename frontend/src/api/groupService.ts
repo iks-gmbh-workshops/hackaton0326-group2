@@ -50,6 +50,10 @@ export interface InviteGroupMemberRequest {
   email: string
 }
 
+export interface UpdateGroupMemberRoleRequest {
+  role: 'VERWALTER' | 'MITGLIED'
+}
+
 export const groupService = {
   // Get all groups of current user
   getMyGroups: async (): Promise<Group[]> => {
@@ -94,6 +98,11 @@ export const groupService = {
   // Remove a member from a group
   removeGroupMember: async (groupId: number, userId: number): Promise<void> => {
     await api.delete(`/groups/${groupId}/members/${userId}`)
+  },
+
+  // Change role of a member inside a group
+  updateGroupMemberRole: async (groupId: number, userId: number, payload: UpdateGroupMemberRoleRequest): Promise<void> => {
+    await api.put(`/groups/${groupId}/members/${userId}/role`, payload)
   },
 
   // Create a new group
