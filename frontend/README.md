@@ -103,12 +103,14 @@ Ablauf:
 
 ## Umgebungsvariablen
 
-Das Frontend liest Umgebungsvariablen zentral aus der Projekt-Root-`.env`
-(nicht aus `frontend/.env*`).
+`.env.development`
 
-Beispiel in `../.env`:
+```env
+VITE_API_URL=http://localhost:8080/api
+```
+
+`.env.production`
 
 ```env
 VITE_API_URL=/api
-VITE_USE_MOCKS=false
 ```
