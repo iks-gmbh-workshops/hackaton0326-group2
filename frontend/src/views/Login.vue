@@ -3,8 +3,8 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-900">Anmeldung</h1>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
-      <UsernameField
-        id="username"
+      <EmailField
+        id="Email"
         v-model="username"
         label="Username"
         :disabled="isSubmitting"
@@ -51,6 +51,7 @@ import { useRouter } from 'vue-router'
 import PasswordFiled from '@/components/fields/PasswordFiled.vue'
 import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
+import EmailField from '@/components/fields/EmailField.vue'
 
 const username = ref('')
 const password = ref('')

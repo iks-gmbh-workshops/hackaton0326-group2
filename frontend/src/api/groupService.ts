@@ -27,7 +27,7 @@ export interface CreateGroupRequest {
 export const groupService = {
   // Get all groups of current user
   getMyGroups: async (): Promise<Group[]> => {
-    const response = await api.get('/groups/my-groups')
+    const response = await api.get('/groups')
     return response.data
   },
 

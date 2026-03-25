@@ -6,18 +6,46 @@
     </p>
     
     <div class="grid grid-cols-1 gap-6">
-      <div class="bg-white rounded-lg shadow p-8 text-center">
-        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.488M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a9 9 0 0118 0v2H6v-2z"/>
-        </svg>
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">Gruppen-Verwaltung</h2>
-        <p class="text-gray-600 mb-4">Diese Seite wird die detaillierte Verwaltung deiner Gruppen anzeigen.</p>
-        <button
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          @click="openCreateForm"
-        >
-          + Neue Gruppe erstellen
-        </button>
+      <div class="bg-white rounded-lg shadow p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-xl font-semibold text-gray-900">Meine Gruppen</h2>
+          <button
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            @click="openCreateForm"
+          >
+            + Neue Gruppe erstellen
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full table-auto">
+            <thead class="bg-gray-50/70">
+              <tr>
+                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
+                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beschreibung</th>
+                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Erstellt durch</th>
+                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Anzahl der Mitglieder</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="isLoadingGroups">
+                <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
+              </tr>
+              <tr v-else-if="groupsError">
+                <td colspan="4" class="px-3 py-3 text-sm text-red-600">{{ groupsError }}</td>
+              </tr>
+              <tr v-else-if="groups.length === 0">
+                <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Keine Gruppen vorhanden.</td>
+              </tr>
+              <tr v-for="group in groups" v-else :key="group.id">
+                <td class="px-3 py-2 text-sm text-gray-900">{{ group.name }}</td>
+                <td class="px-3 py-2 text-sm text-gray-700">{{ group.description || '-' }}</td>
+                <td class="px-3 py-2 text-sm text-gray-700">{{ group.createdBy || '-' }}</td>
+                <td class="px-3 py-2 text-sm text-gray-700">{{ group.memberCount ?? '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -138,14 +166,17 @@
 
 <script setup lang="ts">
 import axios from 'axios'
-import { reactive, ref } from 'vue'
-import { groupService, type CreateGroupRequest } from '../api/groupService'
+import { onMounted, reactive, ref } from 'vue'
+import { groupService, type CreateGroupRequest, type Group } from '../api/groupService'
 
 const showCreateForm = ref(false)
 const memberInput = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const groups = ref<Group[]>([])
+const isLoadingGroups = ref(false)
+const groupsError = ref('')
 
 const form = reactive({
   groupName: '',
@@ -185,6 +216,19 @@ const removeMember = (index: number) => {
   form.members.splice(index, 1)
 }
 
+const loadGroups = async () => {
+  isLoadingGroups.value = true
+  groupsError.value = ''
+
+  try {
+    groups.value = await groupService.getMyGroups()
+  } catch {
+    groupsError.value = 'Gruppen konnten nicht geladen werden.'
+  } finally {
+    isLoadingGroups.value = false
+  }
+}
+
 const createGroup = async () => {
   const name = form.groupName.trim()
   if (!name || isSubmitting.value) return
@@ -199,6 +243,7 @@ const createGroup = async () => {
     if (form.members.length) payload.members = [...form.members]
 
     await groupService.createGroup(payload)
+    await loadGroups()
 
     successMessage.value = 'Gruppe wurde erfolgreich angelegt.'
     showCreateForm.value = false
@@ -214,4 +259,8 @@ const createGroup = async () => {
     isSubmitting.value = false
   }
 }
+
+onMounted(() => {
+  void loadGroups()
+})
 </script>
