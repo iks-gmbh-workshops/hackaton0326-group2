@@ -1,45 +1,45 @@
 <template>
   <div class="space-y-6">
     <div class="border-b border-gray-200 pb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Willkommen {{ displayName }}</h1>
-      <p class="text-gray-600 mt-2">Willkommen! Hier ist dein persönlicher Überblick.</p>
+      <h1 class="app-page-title">Willkommen {{ displayName }}</h1>
+      <p class="app-muted-text mt-2">Willkommen! Hier ist dein persönlicher Überblick.</p>
     </div>
 
     <div class="space-y-6">
       <section class="bg-white rounded-lg shadow p-6 space-y-5">
-        <h2 class="text-2xl font-semibold text-gray-900">Gruppen</h2>
+        <h2 class="app-section-title">Gruppen</h2>
 
         <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-3">Aktive Gruppen</h3>
+          <h3 class="app-subsection-title mb-3">Aktive Gruppen</h3>
           <div class="overflow-x-auto">
-            <table class="w-full table-auto">
-              <thead class="bg-gray-50/70">
+            <table class="app-table">
+              <thead>
                 <tr>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beschreibung</th>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Gruppenleiter</th>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Anzahl Mitglieder</th>
+                  <th>Name</th>
+                  <th>Beschreibung</th>
+                  <th>Gruppenleiter</th>
+                  <th>Anzahl Mitglieder</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="isLoadingGroups">
-                  <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
+                  <td colspan="4" class="app-table-cell-muted">Lade Gruppen...</td>
                 </tr>
                 <tr v-else-if="errorGroups">
-                  <td colspan="4" class="px-3 py-3 text-sm text-red-600">{{ errorGroups }}</td>
+                  <td colspan="4" class="app-table-cell-error">{{ errorGroups }}</td>
                 </tr>
                 <tr v-else-if="myGroups.length === 0">
-                  <td colspan="4" class="px-3 py-3 text-sm text-gray-500">Keine aktiven Gruppen vorhanden.</td>
+                  <td colspan="4" class="app-table-cell-muted">Keine aktiven Gruppen vorhanden.</td>
                 </tr>
                 <tr
                   v-for="(group, index) in myGroups"
                   v-else
                   :key="String(readField(group, ['id', 'groupId', 'name']) ?? index)"
                 >
-                  <td class="px-3 py-2 text-sm text-gray-900">{{ displayGroupName(group) }}</td>
-                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayGroupDescription(group) }}</td>
-                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayGroupLeader(group) }}</td>
-                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayMemberCount(group) }}</td>
+                  <td class="app-table-cell-main">{{ displayGroupName(group) }}</td>
+                  <td>{{ displayGroupDescription(group) }}</td>
+                  <td>{{ displayGroupLeader(group) }}</td>
+                  <td>{{ displayMemberCount(group) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -47,45 +47,45 @@
         </div>
 
         <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-3">Gruppeneinladungen</h3>
+          <h3 class="app-subsection-title mb-3">Gruppeneinladungen</h3>
           <div class="overflow-x-auto">
-            <table class="w-full table-auto">
-              <thead class="bg-gray-50/70">
+            <table class="app-table">
+              <thead>
                 <tr>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Eingeladen durch</th>
-                  <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Aktionen</th>
+                  <th>Name</th>
+                  <th>Eingeladen durch</th>
+                  <th>Aktionen</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="isLoadingInvitations">
-                  <td colspan="3" class="px-3 py-3 text-sm text-gray-500">Lade Gruppeneinladungen...</td>
+                  <td colspan="3" class="app-table-cell-muted">Lade Gruppeneinladungen...</td>
                 </tr>
                 <tr v-else-if="errorInvitations">
-                  <td colspan="3" class="px-3 py-3 text-sm text-red-600">{{ errorInvitations }}</td>
+                  <td colspan="3" class="app-table-cell-error">{{ errorInvitations }}</td>
                 </tr>
                 <tr v-else-if="groupInvitations.length === 0">
-                  <td colspan="3" class="px-3 py-3 text-sm text-gray-500">Keine Gruppeneinladungen vorhanden.</td>
+                  <td colspan="3" class="app-table-cell-muted">Keine Gruppeneinladungen vorhanden.</td>
                 </tr>
                 <tr
                   v-for="(invitation, index) in groupInvitations"
                   v-else
                   :key="String(readField(invitation, ['id', 'invitationId', 'groupInvitationId']) ?? index)"
                 >
-                  <td class="px-3 py-2 text-sm text-gray-900">{{ displayInvitationName(invitation) }}</td>
-                  <td class="px-3 py-2 text-sm text-gray-700">{{ displayInvitationInviter(invitation) }}</td>
-                  <td class="px-3 py-2 text-sm text-gray-700">
+                  <td class="app-table-cell-main">{{ displayInvitationName(invitation) }}</td>
+                  <td>{{ displayInvitationInviter(invitation) }}</td>
+                  <td>
                     <div class="flex items-center gap-2">
                       <button
                         type="button"
-                        class="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700"
+                        class="app-btn-success-sm"
                         @click="handleAcceptInvitation(invitation)"
                       >
                         Akzeptieren
                       </button>
                       <button
                         type="button"
-                        class="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700"
+                        class="app-btn-danger-sm"
                         @click="handleDeclineInvitation(invitation)"
                       >
                         Ablehnen
@@ -100,10 +100,10 @@
       </section>
 
       <section class="bg-white rounded-lg shadow p-6 space-y-5">
-        <h2 class="text-2xl font-semibold text-gray-900">Aktivitäten</h2>
+        <h2 class="app-section-title">Aktivitäten</h2>
 
         <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-3">Anstehende Aktivitäten</h3>
+          <h3 class="app-subsection-title mb-3">Anstehende Aktivitäten</h3>
           <MyActivitiesCard
             :activities="upcomingActivities"
             :is-loading="isLoadingActivities"
@@ -112,7 +112,7 @@
         </div>
 
         <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-3">Einladungen zu Aktivitäten</h3>
+          <h3 class="app-subsection-title mb-3">Einladungen zu Aktivitäten</h3>
           <PendingActivitiesCard
             :activities="pendingActivities"
             :is-loading="isLoadingPending"

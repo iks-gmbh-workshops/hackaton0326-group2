@@ -1,16 +1,16 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Gruppen</h1>
-    <p v-if="successMessage" class="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+    <h1 class="app-page-title mb-6">Gruppen</h1>
+    <p v-if="successMessage" class="app-alert-success mb-4">
       {{ successMessage }}
     </p>
     
     <div class="grid grid-cols-1 gap-6">
       <div class="bg-white rounded-lg shadow p-6 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-xl font-semibold text-gray-900">Meine Gruppen</h2>
+          <h2 class="app-card-title">Meine Gruppen</h2>
           <button
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            class="app-btn-primary"
             @click="openCreateForm"
           >
             + Neue Gruppe erstellen
@@ -18,32 +18,32 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full table-auto">
-            <thead class="bg-gray-50/70">
+          <table class="app-table">
+            <thead>
               <tr>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beschreibung</th>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Erstellt durch</th>
-                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">Anzahl der Mitglieder</th>
-                <th class="px-3 py-2 text-right text-sm font-semibold text-gray-700">Aktion</th>
+                <th>Name</th>
+                <th>Beschreibung</th>
+                <th>Erstellt durch</th>
+                <th>Anzahl der Mitglieder</th>
+                <th class="app-table-col-right">Aktion</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="isLoadingGroups">
-                <td colspan="5" class="px-3 py-3 text-sm text-gray-500">Lade Gruppen...</td>
+                <td colspan="5" class="app-table-cell-muted">Lade Gruppen...</td>
               </tr>
               <tr v-else-if="groupsError">
-                <td colspan="5" class="px-3 py-3 text-sm text-red-600">{{ groupsError }}</td>
+                <td colspan="5" class="app-table-cell-error">{{ groupsError }}</td>
               </tr>
               <tr v-else-if="groups.length === 0">
-                <td colspan="5" class="px-3 py-3 text-sm text-gray-500">Keine Gruppen vorhanden.</td>
+                <td colspan="5" class="app-table-cell-muted">Keine Gruppen vorhanden.</td>
               </tr>
               <tr v-for="group in groups" v-else :key="group.id">
-                <td class="px-3 py-2 text-sm text-gray-900">{{ group.name }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700">{{ group.description || '-' }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700">{{ group.createdBy || '-' }}</td>
-                <td class="px-3 py-2 text-sm text-gray-700">{{ group.memberCount ?? '-' }}</td>
-                <td class="px-3 py-2 text-right">
+                <td class="app-table-cell-main">{{ group.name }}</td>
+                <td>{{ group.description || '-' }}</td>
+                <td>{{ group.createdBy || '-' }}</td>
+                <td>{{ group.memberCount ?? '-' }}</td>
+                <td class="app-table-cell-right">
                   <button
                     type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
@@ -73,7 +73,7 @@
         @submit.prevent="createGroup"
       >
         <div class="flex items-start justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gray-900">Neue Gruppe anlegen</h2>
+          <h2 class="app-card-title">Neue Gruppe anlegen</h2>
           <button
             type="button"
             class="text-gray-500 hover:text-gray-700 text-xl leading-none"
@@ -84,7 +84,7 @@
             x
           </button>
         </div>
-        <p v-if="errorMessage" class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p v-if="errorMessage" class="app-alert-error mb-4">
           {{ errorMessage }}
         </p>
 
@@ -135,7 +135,7 @@
               <button
                 type="button"
                 :disabled="isSubmitting"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                class="app-btn-primary"
                 :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
                 @click="addMember"
               >
@@ -167,7 +167,7 @@
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full md:w-auto px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            class="app-btn-success w-full md:w-auto"
             :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
           >
             {{ isSubmitting ? 'Gruppe wird angelegt...' : 'Gruppe anlegen' }}
@@ -186,7 +186,7 @@
         @submit.prevent="updateGroup"
       >
         <div class="flex items-start justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gray-900">Gruppe bearbeiten</h2>
+          <h2 class="app-card-title">Gruppe bearbeiten</h2>
           <button
             type="button"
             class="text-gray-500 hover:text-gray-700 text-xl leading-none"
@@ -199,7 +199,7 @@
         </div>
         <p
           v-if="editErrorMessage"
-          class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          class="app-alert-error mb-4"
         >
           {{ editErrorMessage }}
         </p>
@@ -253,7 +253,7 @@
               <button
                 type="button"
                 :disabled="isEditSubmitting || isDeletingGroup"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                class="app-btn-primary"
                 :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup }"
                 @click="addEditMember"
               >
@@ -285,7 +285,7 @@
           <button
             type="button"
             :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
-            class="w-full md:w-auto px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            class="app-btn-danger w-full md:w-auto"
             :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
             @click="deleteGroup"
           >
@@ -294,7 +294,7 @@
           <button
             type="submit"
             :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
-            class="w-full md:w-auto px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            class="app-btn-success w-full md:w-auto"
             :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
           >
             {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Aenderungen speichern' }}

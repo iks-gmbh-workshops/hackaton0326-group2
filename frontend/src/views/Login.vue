@@ -1,6 +1,6 @@
 <template>
   <div class="mx-auto max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-    <h1 class="mb-6 text-2xl font-bold text-gray-900">Anmeldung</h1>
+    <h1 class="app-section-title mb-6">Anmeldung</h1>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
       <EmailField
@@ -21,23 +21,23 @@
       <button
         type="submit"
         :disabled="isSubmitting"
-        class="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+        class="app-btn-auth"
         :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
       >
         {{ isSubmitting ? 'Anmeldung laeuft...' : 'Anmelden' }}
       </button>
     </form>
 
-    <p v-if="successMessage" class="mt-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+    <p v-if="successMessage" class="app-alert-success mt-4">
       {{ successMessage }}
     </p>
-    <p v-if="errorMessage" class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <p v-if="errorMessage" class="app-alert-error mt-4">
       {{ errorMessage }}
     </p>
 
     <p class="mt-4 text-center text-sm text-gray-600">
       Noch kein Konto?
-      <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-700">
+      <router-link to="/register" class="app-link-primary">
         Registrieren
       </router-link>
     </p>
