@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PasswordFiled from '@/components/fields/PasswordFiled.vue'
 import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
@@ -59,6 +59,7 @@ const isSubmitting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const router = useRouter()
+const route = useRoute()
 
 const onSubmit = async () => {
   if (isSubmitting.value) return
@@ -79,7 +80,8 @@ const onSubmit = async () => {
     localStorage.setItem('auth_display_name', response.displayName)
 
     successMessage.value = 'Anmeldung erfolgreich'
-    await router.push('/')
+    const redirectTarget = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    await router.push(redirectTarget)
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message

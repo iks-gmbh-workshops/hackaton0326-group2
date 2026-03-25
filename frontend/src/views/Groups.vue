@@ -269,6 +269,7 @@
                   <tr>
                     <th>Mitglied</th>
                     <th>Rolle</th>
+                    <th>Status</th>
                     <th>Beitritt</th>
                     <th class="app-table-col-right">Aktion</th>
                   </tr>
@@ -280,11 +281,12 @@
                   >
                     <td class="app-table-cell-main">{{ member.label }}</td>
                     <td>{{ member.role }}</td>
+                    <td>{{ member.statusLabel }}</td>
                     <td>{{ member.joinedAtLabel }}</td>
                     <td class="app-table-cell-right">
                       <button
                         type="button"
-                        :disabled="isEditSubmitting || isDeletingGroup"
+                        :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember"
                         class="text-red-600 hover:text-red-700"
                         @click="removeEditMember(index)"
                       >
@@ -301,18 +303,18 @@
         <div class="mt-8 pt-5 border-t border-gray-200 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <button
             type="button"
-            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
             class="app-btn-danger w-full md:w-auto"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
             @click="deleteGroup"
           >
             {{ isDeletingGroup ? 'Gruppe wird geloescht...' : 'Gruppe loeschen' }}
           </button>
           <button
             type="submit"
-            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
             class="app-btn-success w-full md:w-auto"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
           >
             {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Aenderungen speichern' }}
           </button>
@@ -343,13 +345,16 @@ const editErrorMessage = ref('')
 const memberErrorMessage = ref('')
 const editMemberErrorMessage = ref('')
 const isInvitingMember = ref(false)
+const isRemovingMember = ref(false)
 const editingGroupId = ref<number | null>(null)
 const isDeletingGroup = ref(false)
 
 interface GroupMemberRow {
+  userId: number | null
   label: string
   email: string
   role: string
+  statusLabel: string
   joinedAtLabel: string
 }
 
@@ -393,6 +398,13 @@ const formatDateLabel = (value: unknown): string => {
 
 const asString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 
+const formatMemberStatus = (value: unknown): string => {
+  const status = asString(value).toUpperCase()
+  if (status === 'ACTIVE') return 'Aktiv (ACTIVE)'
+  if (status === 'PENDING') return 'Warten auf Rueckmeldung (PENDING)'
+  return status ? `${status}` : '-'
+}
+
 const resetForm = () => {
   form.groupName = ''
   form.description = ''
@@ -424,7 +436,7 @@ const closeCreateForm = () => {
 }
 
 const closeEditForm = () => {
-  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value) return
+  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value || isRemovingMember.value) return
   editErrorMessage.value = ''
   showEditForm.value = false
   resetEditForm()
@@ -481,9 +493,11 @@ const addEditMember = async () => {
   try {
     await groupService.inviteMember(groupId, { email: normalizedValue })
     editForm.members.push({
+      userId: null,
       label: normalizedValue,
       email: normalizedValue,
       role: 'MITGLIED',
+      statusLabel: 'Warten auf Rueckmeldung (PENDING)',
       joinedAtLabel: '-'
     })
     editMemberInput.value = ''
@@ -500,25 +514,53 @@ const addEditMember = async () => {
   }
 }
 
-const removeEditMember = (index: number) => {
-  editForm.members.splice(index, 1)
+const removeEditMember = async (index: number) => {
+  if (isRemovingMember.value || isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+
+  const groupId = editingGroupId.value
+  const member = editForm.members[index]
+  if (!groupId || !member) return
+
+  if (member.userId === null) {
+    editForm.members.splice(index, 1)
+    return
+  }
+
+  const confirmed = window.confirm(`Mitglied ${member.label} wirklich entfernen?`)
+  if (!confirmed) return
+
+  isRemovingMember.value = true
+  editMemberErrorMessage.value = ''
+
+  try {
+    await groupService.removeGroupMember(groupId, member.userId)
+    editForm.members.splice(index, 1)
+    successMessage.value = `${member.label} wurde aus der Gruppe entfernt.`
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht entfernt werden.'
+    } else {
+      editMemberErrorMessage.value = 'Mitglied konnte nicht entfernt werden.'
+    }
+  } finally {
+    isRemovingMember.value = false
+  }
 }
 
-const extractMembers = (groupDetails: unknown): GroupMemberRow[] => {
-  if (!groupDetails || typeof groupDetails !== 'object') return []
+const extractMembers = (membersPayload: unknown): GroupMemberRow[] => {
+  if (!Array.isArray(membersPayload)) return []
 
-  const details = groupDetails as Record<string, unknown>
-  const rawMembers = details.members
-  if (!Array.isArray(rawMembers)) return []
-
-  return rawMembers
+  return membersPayload
     .map((member) => {
       if (typeof member === 'string') {
         const email = asString(member)
         return {
+          userId: null,
           label: email || '-',
           email,
           role: 'MITGLIED',
+          statusLabel: '-',
           joinedAtLabel: '-'
         }
       }
@@ -536,12 +578,15 @@ const extractMembers = (groupDetails: unknown): GroupMemberRow[] => {
         asString(data.memberRole) ||
         asString(data.groupRole) ||
         'MITGLIED'
+      const status = data.status ?? data.memberStatus ?? data.invitationStatus
       const joinedAtRaw = data.joinedAt ?? data.createdAt ?? data.memberSince ?? data.joinDate
 
       return {
+        userId: Number.isFinite(Number(data.userId)) ? Number(data.userId) : null,
         label: displayName || email || '-',
         email,
         role,
+        statusLabel: formatMemberStatus(status),
         joinedAtLabel: formatDateLabel(joinedAtRaw)
       }
     })
@@ -549,7 +594,7 @@ const extractMembers = (groupDetails: unknown): GroupMemberRow[] => {
 }
 
 const openEditForm = async (group: Group) => {
-  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value) return
+  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value || isRemovingMember.value) return
 
   resetEditForm()
   editErrorMessage.value = ''
@@ -558,13 +603,15 @@ const openEditForm = async (group: Group) => {
   isLoadingEditData.value = true
 
   try {
-    const groupDetails = await groupService.getGroup(group.id)
-    const details = groupDetails as Group & { members?: unknown }
+    const [groupDetails, groupMembers] = await Promise.all([
+      groupService.getGroup(group.id),
+      groupService.getGroupMembers(group.id)
+    ])
 
     editingGroupId.value = group.id
-    editForm.groupName = (details.name || group.name || '').trim()
-    editForm.description = (details.description || group.description || '').trim()
-    editForm.members = extractMembers(details)
+    editForm.groupName = (groupDetails.name || group.name || '').trim()
+    editForm.description = (groupDetails.description || group.description || '').trim()
+    editForm.members = extractMembers(groupMembers)
   } catch (error) {
     showEditForm.value = false
     resetEditForm()
@@ -643,7 +690,7 @@ const createGroup = async () => {
 const updateGroup = async () => {
   const groupId = editingGroupId.value
   const name = editForm.groupName.trim()
-  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value) return
+  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value || isRemovingMember.value) return
 
   isEditSubmitting.value = true
   editErrorMessage.value = ''
