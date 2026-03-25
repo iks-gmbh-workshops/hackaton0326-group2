@@ -81,6 +81,32 @@ public class GroupController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}/members/me")
+    public ResponseEntity<Void> leaveGroup(@PathVariable Long id,
+                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        groupService.leaveGroup(id, userDetails.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/members/{uid}")
+    public ResponseEntity<Void> removeMember(@PathVariable Long id,
+                                             @PathVariable Long uid,
+                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserRole userRole = UserRole.valueOf(extractRole(userDetails));
+        groupService.removeMember(id, uid, userDetails.getId(), userRole);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/members/{uid}/role")
+    public ResponseEntity<GroupMemberResponse> changeMemberRole(@PathVariable Long id,
+                                                                 @PathVariable Long uid,
+                                                                 @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                 @Valid @RequestBody ChangeRoleRequest request) {
+        UserRole userRole = UserRole.valueOf(extractRole(userDetails));
+        GroupMemberResponse response = groupService.changeMemberRole(id, uid, userDetails.getId(), userRole, request);
+        return ResponseEntity.ok(response);
+    }
+
     private String extractRole(CustomUserDetails userDetails) {
         return userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
     }

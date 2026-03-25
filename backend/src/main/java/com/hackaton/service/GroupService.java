@@ -131,6 +131,63 @@ public class GroupService {
         return toResponse(group);
     }
 
+    @Transactional
+    public void removeMember(Long groupId, Long targetUserId, Long requesterId, UserRole requesterRole) {
+        findGroup(groupId);
+        checkVerwalterOrAdmin(requesterId, groupId, requesterRole);
+
+        GroupMember member = groupMemberRepository.findByUserIdAndGroupId(targetUserId, groupId)
+                .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("User is not an active member of this group"));
+
+        if (member.getRole() == GroupRole.VERWALTER && requesterRole != UserRole.ADMIN) {
+            throw new IllegalArgumentException("Cannot remove a Verwalter unless you are an Admin");
+        }
+
+        member.setStatus(MemberStatus.LEFT);
+        groupMemberRepository.save(member);
+    }
+
+    @Transactional
+    public void leaveGroup(Long groupId, Long userId) {
+        GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
+                .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("Not a member of this group"));
+
+        long activeVerwalterCount = groupMemberRepository.findByGroupId(groupId).stream()
+                .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE && gm.getRole() == GroupRole.VERWALTER)
+                .count();
+
+        if (member.getRole() == GroupRole.VERWALTER && activeVerwalterCount <= 1) {
+            throw new IllegalArgumentException("Cannot leave group as the last Verwalter. Transfer the role first.");
+        }
+
+        member.setStatus(MemberStatus.LEFT);
+        groupMemberRepository.save(member);
+    }
+
+    @Transactional
+    public GroupMemberResponse changeMemberRole(Long groupId, Long targetUserId, Long requesterId, UserRole requesterRole, ChangeRoleRequest request) {
+        findGroup(groupId);
+        checkVerwalterOrAdmin(requesterId, groupId, requesterRole);
+
+        GroupMember member = groupMemberRepository.findByUserIdAndGroupId(targetUserId, groupId)
+                .filter(gm -> gm.getStatus() == MemberStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("User is not an active member of this group"));
+
+        GroupRole newRole;
+        try {
+            newRole = GroupRole.valueOf(request.getRole());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid role. Must be VERWALTER or MITGLIED");
+        }
+
+        member.setRole(newRole);
+        groupMemberRepository.save(member);
+
+        return toMemberResponse(member);
+    }
+
     // --- Hilfsmethoden ---
 
     private void checkMemberOrAdmin(Long userId, Long groupId) {
