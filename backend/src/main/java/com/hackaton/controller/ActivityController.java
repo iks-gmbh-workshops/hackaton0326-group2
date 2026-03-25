@@ -27,6 +27,12 @@ public class ActivityController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<ActivityResponse>> getUpcomingActivities(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<ActivityResponse> response = activityService.getUpcomingActivities(userDetails.getId());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ActivityResponse> getActivity(@PathVariable Long id,
                                                          @AuthenticationPrincipal CustomUserDetails userDetails) {

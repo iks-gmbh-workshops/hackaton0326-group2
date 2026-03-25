@@ -96,6 +96,13 @@ public class ActivityService {
         activityRepository.delete(activity);
     }
 
+    public List<ActivityResponse> getUpcomingActivities(Long userId) {
+        List<Activity> activities = activityRepository.findUpcomingByUserId(userId, java.time.LocalDateTime.now());
+        return activities.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<ActivityResponse> getGroupActivities(Long groupId, Long userId) {
         checkMemberOrAdmin(userId, groupId);
 
