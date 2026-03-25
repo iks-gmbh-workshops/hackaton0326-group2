@@ -1,5 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { activityService, type Activity, type ActivityParticipation } from '../api/activityService'
+import { authService } from '../api/authService'
 
 export function useDashboardActivities() {
   const myActivities = ref<Activity[]>([])
@@ -8,14 +9,30 @@ export function useDashboardActivities() {
   const isLoadingPending = ref(false)
   const errorActivities = ref<string | null>(null)
   const errorPending = ref<string | null>(null)
+  const currentUserId = ref<number | null>(null)
+
+  const ensureCurrentUserId = async (): Promise<number | null> => {
+    if (currentUserId.value !== null) return currentUserId.value
+
+    try {
+      const profile = await authService.getMyProfile()
+      const parsedId = Number((profile as { id?: unknown }).id)
+      currentUserId.value = Number.isFinite(parsedId) ? parsedId : null
+      return currentUserId.value
+    } catch {
+      currentUserId.value = null
+      return null
+    }
+  }
 
   const fetchMyActivities = async () => {
     isLoadingActivities.value = true
     errorActivities.value = null
+
     try {
-      myActivities.value = await activityService.getMyActivities()
+      myActivities.value = await activityService.getUpcomingActivities()
     } catch (error) {
-      errorActivities.value = 'Fehler beim Laden der Aktivitäten'
+      errorActivities.value = 'Fehler beim Laden der Aktivitaeten'
       console.error(error)
     } finally {
       isLoadingActivities.value = false
@@ -25,10 +42,40 @@ export function useDashboardActivities() {
   const fetchPendingActivities = async () => {
     isLoadingPending.value = true
     errorPending.value = null
+
     try {
-      pendingActivities.value = await activityService.getPendingActivities()
+      const userId = await ensureCurrentUserId()
+      if (userId === null) {
+        pendingActivities.value = []
+        errorPending.value = 'Nutzerprofil konnte nicht ermittelt werden'
+        return
+      }
+
+      const sourceActivities =
+        myActivities.value.length > 0 ? myActivities.value : await activityService.getUpcomingActivities()
+
+      const pendingRows: Array<ActivityParticipation | null> = await Promise.all(
+        sourceActivities.map(async (activity) => {
+          const participants = await activityService.getParticipants(activity.id)
+          const ownParticipant = participants.find((participant) => Number(participant.userId) === userId)
+          const ownStatus = String(ownParticipant?.status ?? 'PENDING').toUpperCase()
+
+          if (ownStatus !== 'PENDING') return null
+
+          return {
+            id: activity.id,
+            activityId: activity.id,
+            activityTitle: activity.title,
+            status: 'PENDING',
+            startTime: activity.startTime,
+            endTime: activity.endTime
+          }
+        })
+      )
+
+      pendingActivities.value = pendingRows.filter((row): row is ActivityParticipation => row !== null)
     } catch (error) {
-      errorPending.value = 'Fehler beim Laden der ausstehenden Aktivitäten'
+      errorPending.value = 'Fehler beim Laden der ausstehenden Aktivitaeten'
       console.error(error)
     } finally {
       isLoadingPending.value = false
@@ -37,21 +84,21 @@ export function useDashboardActivities() {
 
   const acceptActivity = async (activityId: number) => {
     try {
-      await activityService.acceptActivity(activityId)
-      pendingActivities.value = pendingActivities.value.filter(a => a.activityId !== activityId)
+      await activityService.respondToActivity(activityId, 'ACCEPTED')
+      pendingActivities.value = pendingActivities.value.filter((a) => a.activityId !== activityId)
       await fetchMyActivities()
     } catch (error) {
-      errorPending.value = 'Fehler beim Akzeptieren der Aktivität'
+      errorPending.value = 'Fehler beim Akzeptieren der Aktivitaet'
       console.error(error)
     }
   }
 
   const declineActivity = async (activityId: number) => {
     try {
-      await activityService.declineActivity(activityId)
-      pendingActivities.value = pendingActivities.value.filter(a => a.activityId !== activityId)
+      await activityService.respondToActivity(activityId, 'DECLINED')
+      pendingActivities.value = pendingActivities.value.filter((a) => a.activityId !== activityId)
     } catch (error) {
-      errorPending.value = 'Fehler beim Ablehnen der Aktivität'
+      errorPending.value = 'Fehler beim Ablehnen der Aktivitaet'
       console.error(error)
     }
   }
@@ -62,13 +109,13 @@ export function useDashboardActivities() {
   const upcomingActivities = computed(() => {
     const now = new Date()
     return myActivities.value
-      .filter(a => new Date(a.startTime) > now)
+      .filter((a) => new Date(a.startTime) > now)
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
   })
 
   onMounted(() => {
-    fetchMyActivities()
-    fetchPendingActivities()
+    void fetchMyActivities()
+    void fetchPendingActivities()
   })
 
   return {

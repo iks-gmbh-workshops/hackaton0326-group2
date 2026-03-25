@@ -104,8 +104,7 @@ const parseJwtPayload = (token: string): JwtPayload | null => {
 }
 
 const isAdmin = computed(() => {
-  const localRole =
-    localStorage.getItem('role')
+  const localRole = localStorage.getItem('role')
 
   if (localRole?.toUpperCase() === 'ADMIN') {
     return true
@@ -187,20 +186,3 @@ onBeforeUnmount(() => {
   window.removeEventListener('storage', handleStorageChange)
 })
 </script>
-
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
-
-html, body, #app {
-  height: 100%;
-  width: 100%;
-}
-</style>

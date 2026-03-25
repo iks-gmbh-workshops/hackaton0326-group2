@@ -27,6 +27,15 @@ export interface GroupMember {
   joinedAt?: string
 }
 
+export interface GroupActivitySummary {
+  id: number
+  title?: string
+  description?: string
+  location?: string
+  startTime?: string
+  endTime?: string
+}
+
 export interface CreateGroupRequest {
   name: string
   description?: string
@@ -73,6 +82,12 @@ export const groupService = {
   // Get members of a group
   getGroupMembers: async (groupId: number): Promise<GroupMember[]> => {
     const response = await api.get(`/groups/${groupId}/members`)
+    return response.data
+  },
+
+  // Get activities of a group
+  getGroupActivities: async (groupId: number): Promise<GroupActivitySummary[]> => {
+    const response = await api.get(`/groups/${groupId}/activities`)
     return response.data
   },
 

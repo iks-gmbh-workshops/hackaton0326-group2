@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div class="border-b border-gray-200 pb-6">
       <h1 class="app-page-title">Willkommen {{ displayName }}</h1>
-      <p class="app-muted-text mt-2">Willkommen! Hier ist dein persönlicher Überblick.</p>
+      <p class="app-muted-text mt-2">Willkommen! Hier ist dein persoenlicher Ueberblick.</p>
     </div>
 
     <div class="space-y-6">
@@ -100,10 +100,10 @@
       </section>
 
       <section class="bg-white rounded-lg shadow p-6 space-y-5">
-        <h2 class="app-section-title">Aktivitäten</h2>
+        <h2 class="app-section-title">Aktivitaeten</h2>
 
         <div>
-          <h3 class="app-subsection-title mb-3">Anstehende Aktivitäten</h3>
+          <h3 class="app-subsection-title mb-3">Anstehende Aktivitaeten</h3>
           <MyActivitiesCard
             :activities="upcomingActivities"
             :is-loading="isLoadingActivities"
@@ -112,7 +112,7 @@
         </div>
 
         <div>
-          <h3 class="app-subsection-title mb-3">Einladungen zu Aktivitäten</h3>
+          <h3 class="app-subsection-title mb-3">Einladungen zu Aktivitaeten</h3>
           <PendingActivitiesCard
             :activities="pendingActivities"
             :is-loading="isLoadingPending"
@@ -212,22 +212,3 @@ const handleDeclineInvitation = async (invitation: unknown) => {
   await declineInvitation(invitationId)
 }
 </script>
-
-<style scoped>
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-</style>

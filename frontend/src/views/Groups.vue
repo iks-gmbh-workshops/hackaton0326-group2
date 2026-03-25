@@ -44,17 +44,31 @@
                 <td>{{ group.createdBy || '-' }}</td>
                 <td>{{ group.memberCount ?? '-' }}</td>
                 <td class="app-table-cell-right">
-                  <button
-                    type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
-                    aria-label="Gruppe bearbeiten"
-                    :disabled="isSubmitting || isEditSubmitting || isDeletingGroup"
-                    @click="openEditForm(group)"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-                      <path d="M13.586 2.586a2 2 0 0 1 2.828 2.828l-8.25 8.25a2 2 0 0 1-.878.513l-3 1a1 1 0 0 1-1.264-1.264l1-3a2 2 0 0 1 .513-.878l8.25-8.25Zm1.414 1.414a.5.5 0 0 0-.707 0L5.99 12.303a.5.5 0 0 0-.128.22l-.62 1.858 1.859-.62a.5.5 0 0 0 .219-.128L15.623 5.33A.5.5 0 0 0 15 4Z" />
-                    </svg>
-                  </button>
+                  <div class="inline-flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
+                      aria-label="Gruppe ansehen"
+                      :disabled="isSubmitting || isEditSubmitting || isDeletingGroup"
+                      @click="openViewForm(group)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path d="M10 3c4.204 0 7.663 2.687 8.819 6.433a1.5 1.5 0 0 1 0 .934C17.663 14.113 14.204 16.8 10 16.8S2.337 14.113 1.18 10.367a1.5 1.5 0 0 1 0-.934C2.337 5.687 5.796 3 10 3Zm0 2C6.768 5 4.053 6.97 3.06 9.9c.993 2.93 3.708 4.9 6.94 4.9s5.947-1.97 6.94-4.9C15.947 6.97 13.232 5 10 5Zm0 1.7a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Z" />
+                      </svg>
+                    </button>
+                    <button
+                      v-if="canEditGroup(group.id)"
+                      type="button"
+                      class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
+                      aria-label="Gruppe bearbeiten"
+                      :disabled="isSubmitting || isEditSubmitting || isDeletingGroup"
+                      @click="openEditForm(group)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                        <path d="M13.586 2.586a2 2 0 0 1 2.828 2.828l-8.25 8.25a2 2 0 0 1-.878.513l-3 1a1 1 0 0 1-1.264-1.264l1-3a2 2 0 0 1 .513-.878l8.25-8.25Zm1.414 1.414a.5.5 0 0 0-.707 0L5.99 12.303a.5.5 0 0 0-.128.22l-.62 1.858 1.859-.62a.5.5 0 0 0 .219-.128L15.623 5.33A.5.5 0 0 0 15 4Z" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -187,7 +201,7 @@
         @submit.prevent="updateGroup"
       >
         <div class="flex items-start justify-between mb-6">
-          <h2 class="app-card-title">Gruppe bearbeiten</h2>
+          <h2 class="app-card-title">{{ isViewOnlyMode ? 'Gruppe ansehen' : 'Gruppe bearbeiten' }}</h2>
           <button
             type="button"
             class="text-gray-500 hover:text-gray-700 text-xl leading-none"
@@ -217,7 +231,7 @@
               v-model.trim="editForm.groupName"
               type="text"
               required
-              :disabled="isEditSubmitting || isDeletingGroup"
+              :disabled="isViewOnlyMode || isEditSubmitting || isDeletingGroup"
               placeholder="z. B. Laufgruppe Mittwoch"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -231,31 +245,31 @@
               id="editDescription"
               v-model.trim="editForm.description"
               rows="3"
-              :disabled="isEditSubmitting || isDeletingGroup"
+              :disabled="isViewOnlyMode || isEditSubmitting || isDeletingGroup"
               placeholder="Kurze Beschreibung der Gruppe"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label for="editMemberInput" class="block text-sm font-medium text-gray-700 mb-1">
+            <label v-if="!isViewOnlyMode" for="editMemberInput" class="block text-sm font-medium text-gray-700 mb-1">
               Gruppenmitglieder hinzufuegen
             </label>
-            <div class="flex gap-2">
+            <div v-if="!isViewOnlyMode" class="flex gap-2">
               <input
                 id="editMemberInput"
                 v-model.trim="editMemberInput"
                 type="email"
-                :disabled="isEditSubmitting || isDeletingGroup || isInvitingMember"
+                :disabled="isViewOnlyMode || isEditSubmitting || isDeletingGroup || isInvitingMember"
                 placeholder="mitglied@beispiel.de"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @keyup.enter.prevent="addEditMember"
               />
               <button
                 type="button"
-                :disabled="isEditSubmitting || isDeletingGroup || isInvitingMember"
+                :disabled="isViewOnlyMode || isEditSubmitting || isDeletingGroup || isInvitingMember"
                 class="app-btn-primary"
-                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup || isInvitingMember }"
+                :class="{ 'cursor-not-allowed opacity-70': isViewOnlyMode || isEditSubmitting || isDeletingGroup || isInvitingMember }"
                 @click="addEditMember"
               >
                 {{ isInvitingMember ? '...' : '+' }}
@@ -271,7 +285,7 @@
                     <th>Rolle</th>
                     <th>Status</th>
                     <th>Beitritt</th>
-                    <th class="app-table-col-right">Aktion</th>
+                    <th v-if="!isViewOnlyMode" class="app-table-col-right">Aktion</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,8 +297,9 @@
                     <td>{{ member.role }}</td>
                     <td>{{ member.statusLabel }}</td>
                     <td>{{ member.joinedAtLabel }}</td>
-                    <td class="app-table-cell-right">
+                    <td v-if="!isViewOnlyMode" class="app-table-cell-right">
                       <button
+                        v-if="!isViewOnlyMode"
                         type="button"
                         :disabled="isEditSubmitting || isDeletingGroup || isRemovingMember"
                         class="text-red-600 hover:text-red-700"
@@ -298,9 +313,62 @@
               </table>
             </div>
           </div>
+
+          <div class="pt-2">
+            <h3 class="app-subsection-title mb-3">Anstehende Veranstaltungen</h3>
+            <div class="overflow-x-auto">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>Titel</th>
+                    <th>Datum/Uhrzeit</th>
+                    <th>Ort</th>
+                    <th>Beschreibung</th>
+                    <th class="app-table-col-right">Mein Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="isLoadingGroupActivities">
+                    <td colspan="5" class="app-table-cell-muted">Veranstaltungen werden geladen...</td>
+                  </tr>
+                  <tr v-else-if="groupActivitiesError">
+                    <td colspan="5" class="app-table-cell-error">{{ groupActivitiesError }}</td>
+                  </tr>
+                  <tr v-else-if="groupActivities.length === 0">
+                    <td colspan="5" class="app-table-cell-muted">Keine anstehenden Veranstaltungen.</td>
+                  </tr>
+                  <tr
+                    v-for="activity in groupActivities"
+                    v-else
+                    :key="activity.id"
+                  >
+                    <td class="app-table-cell-main">{{ activity.title }}</td>
+                    <td>{{ activity.startLabel }}</td>
+                    <td>{{ activity.location }}</td>
+                    <td>{{ activity.description }}</td>
+                    <td class="app-table-cell-right">
+                      <select
+                        :value="activity.status"
+                        :disabled="Boolean(updatingActivityStatus[activity.id])"
+                        class="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @change="updateParticipationStatus(activity.id, String(($event.target as HTMLSelectElement).value))"
+                      >
+                        <option value="PENDING">{{ participationStatusLabel('PENDING') }}</option>
+                        <option value="ACCEPTED">{{ participationStatusLabel('ACCEPTED') }}</option>
+                        <option value="DECLINED">{{ participationStatusLabel('DECLINED') }}</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <div class="mt-8 pt-5 border-t border-gray-200 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+          v-if="!isViewOnlyMode"
+          class="mt-8 pt-5 border-t border-gray-200 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
           <button
             type="button"
             :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember"
@@ -327,7 +395,9 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, reactive, ref } from 'vue'
-import { groupService, type CreateGroupRequest, type Group, type UpdateGroupRequest } from '../api/groupService'
+import { activityService } from '../api/activityService'
+import { authService } from '../api/authService'
+import { groupService, type CreateGroupRequest, type Group, type GroupActivitySummary, type UpdateGroupRequest } from '../api/groupService'
 
 const showCreateForm = ref(false)
 const memberInput = ref('')
@@ -348,6 +418,13 @@ const isInvitingMember = ref(false)
 const isRemovingMember = ref(false)
 const editingGroupId = ref<number | null>(null)
 const isDeletingGroup = ref(false)
+const isViewOnlyMode = ref(false)
+const currentUserId = ref<number | null>(null)
+const editableGroups = ref<Record<number, boolean>>({})
+const groupActivities = ref<GroupActivityRow[]>([])
+const isLoadingGroupActivities = ref(false)
+const groupActivitiesError = ref('')
+const updatingActivityStatus = ref<Record<number, boolean>>({})
 
 interface GroupMemberRow {
   userId: number | null
@@ -356,6 +433,18 @@ interface GroupMemberRow {
   role: string
   statusLabel: string
   joinedAtLabel: string
+}
+
+type ParticipationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED'
+
+interface GroupActivityRow {
+  id: number
+  title: string
+  description: string
+  location: string
+  startTime: string
+  startLabel: string
+  status: ParticipationStatus
 }
 
 const form = reactive({
@@ -396,6 +485,34 @@ const formatDateLabel = (value: unknown): string => {
   })
 }
 
+const formatDateTimeLabel = (value: unknown): string => {
+  if (typeof value !== 'string' || !value.trim()) return '-'
+  const parsedDate = new Date(value)
+  if (Number.isNaN(parsedDate.getTime())) return '-'
+
+  return parsedDate.toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const parseDate = (value: unknown): Date | null => {
+  if (typeof value !== 'string' || !value.trim()) return null
+  const parsedDate = new Date(value)
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate
+}
+
+const isUpcomingFromToday = (value: unknown): boolean => {
+  const parsed = parseDate(value)
+  if (!parsed) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return parsed >= today
+}
+
 const asString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 
 const formatMemberStatus = (value: unknown): string => {
@@ -403,6 +520,46 @@ const formatMemberStatus = (value: unknown): string => {
   if (status === 'ACTIVE') return 'Aktiv (ACTIVE)'
   if (status === 'PENDING') return 'Warten auf Rueckmeldung (PENDING)'
   return status ? `${status}` : '-'
+}
+
+const loadCurrentUserId = async (): Promise<void> => {
+  if (currentUserId.value !== null) return
+  try {
+    const profile = await authService.getMyProfile()
+    const parsedId = Number((profile as { id?: unknown }).id)
+    currentUserId.value = Number.isFinite(parsedId) ? parsedId : null
+  } catch {
+    currentUserId.value = null
+  }
+}
+
+const canEditGroup = (groupId: number): boolean => Boolean(editableGroups.value[groupId])
+
+const loadEditPermissions = async (nextGroups: Group[]) => {
+  editableGroups.value = {}
+  if (nextGroups.length === 0) return
+
+  await loadCurrentUserId()
+  if (currentUserId.value === null) return
+
+  const permissions = await Promise.all(
+    nextGroups.map(async (group) => {
+      try {
+        const members = await groupService.getGroupMembers(group.id)
+        const canEdit = members.some((member) => {
+          const memberUserId = Number(member.userId)
+          const memberRole = asString(member.role).toUpperCase()
+          const memberStatus = asString(member.status).toUpperCase()
+          return Number.isFinite(memberUserId) && memberUserId === currentUserId.value && memberRole === 'VERWALTER' && memberStatus === 'ACTIVE'
+        })
+        return [group.id, canEdit] as const
+      } catch {
+        return [group.id, false] as const
+      }
+    })
+  )
+
+  editableGroups.value = Object.fromEntries(permissions)
 }
 
 const resetForm = () => {
@@ -417,9 +574,13 @@ const resetEditForm = () => {
   editForm.groupName = ''
   editForm.description = ''
   editForm.members = []
+  groupActivities.value = []
+  groupActivitiesError.value = ''
+  updatingActivityStatus.value = {}
   editMemberInput.value = ''
   editMemberErrorMessage.value = ''
   editingGroupId.value = null
+  isViewOnlyMode.value = false
 }
 
 const openCreateForm = () => {
@@ -468,6 +629,7 @@ const removeMember = (index: number) => {
 }
 
 const addEditMember = async () => {
+  if (isViewOnlyMode.value) return
   if (isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
 
   const value = editMemberInput.value.trim()
@@ -515,6 +677,7 @@ const addEditMember = async () => {
 }
 
 const removeEditMember = async (index: number) => {
+  if (isViewOnlyMode.value) return
   if (isRemovingMember.value || isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
 
   const groupId = editingGroupId.value
@@ -593,16 +756,126 @@ const extractMembers = (membersPayload: unknown): GroupMemberRow[] => {
     .filter((member): member is GroupMemberRow => Boolean(member))
 }
 
-const openEditForm = async (group: Group) => {
+const normalizeParticipationStatus = (value: unknown): ParticipationStatus => {
+  const status = asString(value).toUpperCase()
+  if (status === 'ACCEPTED') return 'ACCEPTED'
+  if (status === 'DECLINED') return 'DECLINED'
+  return 'PENDING'
+}
+
+const participationStatusLabel = (status: ParticipationStatus): string => {
+  if (status === 'ACCEPTED') return 'Zugesagt'
+  if (status === 'DECLINED') return 'Abgesagt'
+  return 'Auf Vorbehalt'
+}
+
+const loadGroupActivities = async (groupId: number) => {
+  isLoadingGroupActivities.value = true
+  groupActivitiesError.value = ''
+  groupActivities.value = []
+
+  try {
+    const activities = await groupService.getGroupActivities(groupId)
+    const upcomingActivities = activities
+      .filter((activity) => isUpcomingFromToday((activity as GroupActivitySummary).startTime))
+      .sort((a, b) => {
+        const startA = parseDate((a as GroupActivitySummary).startTime)?.getTime() ?? 0
+        const startB = parseDate((b as GroupActivitySummary).startTime)?.getTime() ?? 0
+        return startA - startB
+      })
+
+    const mapped = await Promise.all(
+      upcomingActivities.map(async (activity) => {
+        const activityId = Number(activity.id)
+        let status: ParticipationStatus = 'PENDING'
+
+        if (Number.isFinite(activityId) && currentUserId.value !== null) {
+          try {
+            const participants = await activityService.getParticipants(activityId)
+            const ownParticipant = participants.find((participant) => Number(participant.userId) === currentUserId.value)
+            status = normalizeParticipationStatus(ownParticipant?.status)
+          } catch {
+            status = 'PENDING'
+          }
+        }
+
+        return {
+          id: activityId,
+          title: asString(activity.title) || 'Ohne Titel',
+          description: asString(activity.description) || '-',
+          location: asString(activity.location) || '-',
+          startTime: asString(activity.startTime),
+          startLabel: formatDateTimeLabel(activity.startTime),
+          status
+        } as GroupActivityRow
+      })
+    )
+
+    groupActivities.value = mapped.filter((activity) => Number.isFinite(activity.id))
+  } catch (error) {
+    groupActivitiesError.value = 'Anstehende Veranstaltungen konnten nicht geladen werden.'
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      if (backendMessage) groupActivitiesError.value = backendMessage
+    }
+  } finally {
+    isLoadingGroupActivities.value = false
+  }
+}
+
+const updateParticipationStatus = async (activityId: number, rawStatus: string) => {
+  const nextStatus = normalizeParticipationStatus(rawStatus)
+  if (!Number.isFinite(activityId)) return
+  if (updatingActivityStatus.value[activityId]) return
+
+  const current = groupActivities.value.find((activity) => activity.id === activityId)
+  if (!current) return
+
+  const previousStatus = current.status
+  current.status = nextStatus
+
+  if (nextStatus === 'PENDING' && previousStatus !== 'PENDING') {
+    current.status = previousStatus
+    editErrorMessage.value = 'Auf Vorbehalt kann nur gesetzt werden, solange noch keine Zu-/Absage erfolgt ist.'
+    return
+  }
+
+  updatingActivityStatus.value = {
+    ...updatingActivityStatus.value,
+    [activityId]: true
+  }
+
+  try {
+    await activityService.respondToActivity(activityId, nextStatus)
+    successMessage.value = 'Dein Veranstaltungsstatus wurde aktualisiert.'
+  } catch (error) {
+    current.status = previousStatus
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editErrorMessage.value = backendMessage || 'Status konnte nicht aktualisiert werden.'
+    } else {
+      editErrorMessage.value = 'Status konnte nicht aktualisiert werden.'
+    }
+  } finally {
+    const nextMap = { ...updatingActivityStatus.value }
+    delete nextMap[activityId]
+    updatingActivityStatus.value = nextMap
+  }
+}
+
+const openGroupForm = async (group: Group, viewOnly: boolean) => {
   if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value || isRemovingMember.value) return
+  if (!viewOnly && !canEditGroup(group.id)) return
 
   resetEditForm()
+  isViewOnlyMode.value = viewOnly
   editErrorMessage.value = ''
   successMessage.value = ''
   showEditForm.value = true
   isLoadingEditData.value = true
 
   try {
+    await loadCurrentUserId()
     const [groupDetails, groupMembers] = await Promise.all([
       groupService.getGroup(group.id),
       groupService.getGroupMembers(group.id)
@@ -612,6 +885,7 @@ const openEditForm = async (group: Group) => {
     editForm.groupName = (groupDetails.name || group.name || '').trim()
     editForm.description = (groupDetails.description || group.description || '').trim()
     editForm.members = extractMembers(groupMembers)
+    await loadGroupActivities(group.id)
   } catch (error) {
     showEditForm.value = false
     resetEditForm()
@@ -627,12 +901,22 @@ const openEditForm = async (group: Group) => {
   }
 }
 
+const openViewForm = async (group: Group) => {
+  await openGroupForm(group, true)
+}
+
+const openEditForm = async (group: Group) => {
+  await openGroupForm(group, false)
+}
+
 const loadGroups = async () => {
   isLoadingGroups.value = true
   groupsError.value = ''
 
   try {
-    groups.value = await groupService.getMyGroups()
+    const nextGroups = await groupService.getMyGroups()
+    groups.value = nextGroups
+    await loadEditPermissions(nextGroups)
   } catch {
     groupsError.value = 'Gruppen konnten nicht geladen werden.'
   } finally {
@@ -688,6 +972,7 @@ const createGroup = async () => {
 }
 
 const updateGroup = async () => {
+  if (isViewOnlyMode.value) return
   const groupId = editingGroupId.value
   const name = editForm.groupName.trim()
   if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value || isRemovingMember.value) return
@@ -719,6 +1004,7 @@ const updateGroup = async () => {
 }
 
 const deleteGroup = async () => {
+  if (isViewOnlyMode.value) return
   const groupId = editingGroupId.value
   if (!groupId || isDeletingGroup.value || isEditSubmitting.value || isLoadingEditData.value) return
 
