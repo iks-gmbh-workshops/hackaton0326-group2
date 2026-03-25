@@ -1,25 +1,21 @@
 <template>
   <div class="space-y-6">
-    <h1 class="app-page-title">Aktivitaeten</h1>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="app-page-title">Meine Aktivitaeten</h1>
+      <button class="app-btn-success" @click="openCreateForm">
+        Neue Aktivitaet erstellen
+      </button>
+    </div>
+
     <p v-if="successMessage" class="app-alert-success">
       {{ successMessage }}
     </p>
-
-    <div class="grid grid-cols-1 gap-6">
-      <div class="bg-white rounded-lg shadow p-8 text-center">
-        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <h2 class="app-card-title mb-2">Aktivitaeten-Verwaltung</h2>
-        <p class="app-muted-text mb-4">Lege hier neue Aktivitaeten fuer deine Gruppen an.</p>
-        <button class="app-btn-success" @click="openCreateForm">
-          + Neue Aktivitaet erstellen
-        </button>
-      </div>
-    </div>
+    <p v-if="errorMessage" class="app-alert-error">
+      {{ errorMessage }}
+    </p>
 
     <section class="bg-white rounded-lg shadow p-6 space-y-4">
-      <h2 class="app-card-title">Aktivitaeten mit meiner Teilnahme</h2>
+      <h2 class="app-card-title">Meine Aktivitaeten</h2>
       <div class="overflow-x-auto">
         <table class="app-table">
           <thead>
@@ -28,32 +24,201 @@
               <th>Datum/Uhrzeit</th>
               <th>Ort</th>
               <th>Beschreibung</th>
+              <th class="app-table-col-right">Aktionen</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="isLoadingParticipantActivities">
-              <td colspan="4" class="app-table-cell-muted">Lade Aktivitaeten...</td>
+            <tr v-if="isLoadingActivities">
+              <td colspan="5" class="app-table-cell-muted">Lade Aktivitaeten...</td>
             </tr>
-            <tr v-else-if="participantActivitiesError">
-              <td colspan="4" class="app-table-cell-error">{{ participantActivitiesError }}</td>
+            <tr v-else-if="activitiesError">
+              <td colspan="5" class="app-table-cell-error">{{ activitiesError }}</td>
             </tr>
-            <tr v-else-if="participantActivities.length === 0">
-              <td colspan="4" class="app-table-cell-muted">Keine Aktivitaeten mit Teilnahme vorhanden.</td>
+            <tr v-else-if="acceptedActivities.length === 0">
+              <td colspan="5" class="app-table-cell-muted">Keine zugesagten Aktivitaeten vorhanden.</td>
             </tr>
-            <tr
-              v-for="activity in participantActivities"
-              v-else
-              :key="activity.id"
-            >
+            <tr v-for="activity in acceptedActivities" :key="`accepted-${activity.id}`">
               <td class="app-table-cell-main">{{ activity.title }}</td>
               <td>{{ formatDateTime(activity.startTime) }}</td>
-              <td>{{ activity.location || '-' }}</td>
-              <td>{{ activity.description || '-' }}</td>
+              <td>{{ displayOrDash(activity.location) }}</td>
+              <td>{{ shortDescription(activity.description) }}</td>
+              <td class="app-table-cell-right">
+                <div class="inline-flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
+                    aria-label="Details ansehen"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="openDetails(activity)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                      <path d="M10 3c4.204 0 7.663 2.687 8.819 6.433a1.5 1.5 0 0 1 0 .934C17.663 14.113 14.204 16.8 10 16.8S2.337 14.113 1.18 10.367a1.5 1.5 0 0 1 0-.934C2.337 5.687 5.796 3 10 3Zm0 2C6.768 5 4.053 6.97 3.06 9.9c.993 2.93 3.708 4.9 6.94 4.9s5.947-1.97 6.94-4.9C15.947 6.97 13.232 5 10 5Zm0 1.7a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="app-btn-danger-sm"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="respondToActivity(activity.id, 'DECLINED')"
+                  >
+                    Absagen
+                  </button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
+
+    <section class="bg-white rounded-lg shadow p-6 space-y-4">
+      <h2 class="app-card-title">Einladungen</h2>
+      <div class="overflow-x-auto">
+        <table class="app-table">
+          <thead>
+            <tr>
+              <th>Titel</th>
+              <th>Datum/Uhrzeit</th>
+              <th>Ort</th>
+              <th>Beschreibung</th>
+              <th class="app-table-col-right">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="isLoadingActivities">
+              <td colspan="5" class="app-table-cell-muted">Lade Einladungen...</td>
+            </tr>
+            <tr v-else-if="activitiesError">
+              <td colspan="5" class="app-table-cell-error">{{ activitiesError }}</td>
+            </tr>
+            <tr v-else-if="pendingActivities.length === 0">
+              <td colspan="5" class="app-table-cell-muted">Keine offenen Einladungen vorhanden.</td>
+            </tr>
+            <tr v-for="activity in pendingActivities" :key="`pending-${activity.id}`">
+              <td class="app-table-cell-main">{{ activity.title }}</td>
+              <td>{{ formatDateTime(activity.startTime) }}</td>
+              <td>{{ displayOrDash(activity.location) }}</td>
+              <td>{{ shortDescription(activity.description) }}</td>
+              <td class="app-table-cell-right">
+                <div class="inline-flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
+                    aria-label="Details ansehen"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="openDetails(activity)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                      <path d="M10 3c4.204 0 7.663 2.687 8.819 6.433a1.5 1.5 0 0 1 0 .934C17.663 14.113 14.204 16.8 10 16.8S2.337 14.113 1.18 10.367a1.5 1.5 0 0 1 0-.934C2.337 5.687 5.796 3 10 3Zm0 2C6.768 5 4.053 6.97 3.06 9.9c.993 2.93 3.708 4.9 6.94 4.9s5.947-1.97 6.94-4.9C15.947 6.97 13.232 5 10 5Zm0 1.7a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="app-btn-success-sm"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="respondToActivity(activity.id, 'ACCEPTED')"
+                  >
+                    Zusagen
+                  </button>
+                  <button
+                    type="button"
+                    class="app-btn-danger-sm"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="respondToActivity(activity.id, 'DECLINED')"
+                  >
+                    Absagen
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-6 space-y-4">
+      <h2 class="app-card-title">Abgelehnte Einladungen</h2>
+      <div class="overflow-x-auto">
+        <table class="app-table">
+          <thead>
+            <tr>
+              <th>Titel</th>
+              <th>Datum/Uhrzeit</th>
+              <th>Ort</th>
+              <th>Beschreibung</th>
+              <th class="app-table-col-right">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="isLoadingActivities">
+              <td colspan="5" class="app-table-cell-muted">Lade Einladungen...</td>
+            </tr>
+            <tr v-else-if="activitiesError">
+              <td colspan="5" class="app-table-cell-error">{{ activitiesError }}</td>
+            </tr>
+            <tr v-else-if="declinedActivities.length === 0">
+              <td colspan="5" class="app-table-cell-muted">Keine abgelehnten Einladungen vorhanden.</td>
+            </tr>
+            <tr v-for="activity in declinedActivities" :key="`declined-${activity.id}`">
+              <td class="app-table-cell-main">{{ activity.title }}</td>
+              <td>{{ formatDateTime(activity.startTime) }}</td>
+              <td>{{ displayOrDash(activity.location) }}</td>
+              <td>{{ shortDescription(activity.description) }}</td>
+              <td class="app-table-cell-right">
+                <div class="inline-flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
+                    aria-label="Details ansehen"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="openDetails(activity)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                      <path d="M10 3c4.204 0 7.663 2.687 8.819 6.433a1.5 1.5 0 0 1 0 .934C17.663 14.113 14.204 16.8 10 16.8S2.337 14.113 1.18 10.367a1.5 1.5 0 0 1 0-.934C2.337 5.687 5.796 3 10 3Zm0 2C6.768 5 4.053 6.97 3.06 9.9c.993 2.93 3.708 4.9 6.94 4.9s5.947-1.97 6.94-4.9C15.947 6.97 13.232 5 10 5Zm0 1.7a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="app-btn-success-sm"
+                    :disabled="isActionLoading(activity.id)"
+                    @click="respondToActivity(activity.id, 'ACCEPTED')"
+                  >
+                    Zusagen
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div
+      v-if="showDetailsModal && selectedActivity"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeDetails"
+    >
+      <div class="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl fade-in">
+        <div class="mb-5 flex items-start justify-between">
+          <h2 class="app-card-title">Aktivitaetsdetails</h2>
+          <button
+            type="button"
+            class="text-xl leading-none text-gray-500 hover:text-gray-700"
+            aria-label="Details schliessen"
+            @click="closeDetails"
+          >
+            x
+          </button>
+        </div>
+
+        <div class="space-y-3 text-sm text-gray-700">
+          <p><span class="font-semibold text-gray-900">Titel:</span> {{ selectedActivity.title }}</p>
+          <p><span class="font-semibold text-gray-900">Datum/Uhrzeit:</span> {{ formatDateTime(selectedActivity.startTime) }}</p>
+          <p><span class="font-semibold text-gray-900">Ort:</span> {{ displayOrDash(selectedActivity.location) }}</p>
+          <p><span class="font-semibold text-gray-900">Beschreibung:</span> {{ displayOrDash(selectedActivity.description) }}</p>
+        </div>
+      </div>
+    </div>
 
     <div
       v-if="showCreateForm"
@@ -77,8 +242,8 @@
           </button>
         </div>
 
-        <p v-if="errorMessage" class="app-alert-error mb-4">
-          {{ errorMessage }}
+        <p v-if="createErrorMessage" class="app-alert-error mb-4">
+          {{ createErrorMessage }}
         </p>
 
         <div class="space-y-5">
@@ -200,7 +365,7 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { activityService } from '../api/activityService'
+import { activityService, type Activity } from '../api/activityService'
 import { authService } from '../api/authService'
 import { groupService } from '../api/groupService'
 
@@ -209,16 +374,23 @@ interface EligibleGroup {
   name: string
 }
 
+type ParticipationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED'
+
 const showCreateForm = ref(false)
 const isSubmitting = ref(false)
 const isLoadingEligibleGroups = ref(false)
 const eligibleGroups = ref<EligibleGroup[]>([])
-const errorMessage = ref('')
+const createErrorMessage = ref('')
 const successMessage = ref('')
+const errorMessage = ref('')
 const currentUserId = ref<number | null>(null)
-const participantActivities = ref<Awaited<ReturnType<typeof activityService.getMyActivities>>>([])
-const isLoadingParticipantActivities = ref(false)
-const participantActivitiesError = ref('')
+const allActivities = ref<Activity[]>([])
+const activityStatuses = ref<Record<number, ParticipationStatus>>({})
+const isLoadingActivities = ref(false)
+const activitiesError = ref('')
+const actionLoadingById = ref<Record<number, boolean>>({})
+const showDetailsModal = ref(false)
+const selectedActivity = ref<Activity | null>(null)
 
 const form = reactive({
   groupId: '',
@@ -296,6 +468,25 @@ const isManagerFromMembers = async (groupId: number): Promise<boolean> => {
   }
 }
 
+const normalizeParticipationStatus = (value: unknown): ParticipationStatus => {
+  const status = asNonEmptyString(value).toUpperCase()
+  if (status === 'ACCEPTED') return 'ACCEPTED'
+  if (status === 'DECLINED') return 'DECLINED'
+  return 'PENDING'
+}
+
+const getOwnStatusForActivity = async (activityId: number): Promise<ParticipationStatus> => {
+  if (currentUserId.value === null) return 'PENDING'
+
+  try {
+    const participants = await activityService.getParticipants(activityId)
+    const ownParticipant = participants.find((participant) => Number(participant.userId) === currentUserId.value)
+    return normalizeParticipationStatus(ownParticipant?.status)
+  } catch {
+    return 'PENDING'
+  }
+}
+
 const loadCurrentUserId = async (): Promise<void> => {
   if (currentUserId.value !== null) return
   try {
@@ -314,7 +505,7 @@ const resetForm = () => {
   form.date = ''
   form.time = ''
   form.location = ''
-  errorMessage.value = ''
+  createErrorMessage.value = ''
 }
 
 const hasUnsavedInput = computed(() =>
@@ -328,9 +519,32 @@ const hasUnsavedInput = computed(() =>
   )
 )
 
+const acceptedActivities = computed(() =>
+  allActivities.value.filter((activity) => activityStatuses.value[activity.id] === 'ACCEPTED')
+)
+
+const pendingActivities = computed(() =>
+  allActivities.value.filter((activity) => activityStatuses.value[activity.id] === 'PENDING')
+)
+
+const declinedActivities = computed(() =>
+  allActivities.value.filter((activity) => activityStatuses.value[activity.id] === 'DECLINED')
+)
+
+const displayOrDash = (value: unknown): string => {
+  const normalized = asNonEmptyString(value)
+  return normalized || '-'
+}
+
+const shortDescription = (value: unknown): string => {
+  const description = asNonEmptyString(value)
+  if (!description) return '-'
+  return description.length > 20 ? `${description.slice(0, 20)}...` : description
+}
+
 const loadEligibleGroups = async () => {
   isLoadingEligibleGroups.value = true
-  errorMessage.value = ''
+  createErrorMessage.value = ''
 
   try {
     const allGroups = await groupService.getMyGroups()
@@ -344,7 +558,7 @@ const loadEligibleGroups = async () => {
     await loadCurrentUserId()
     if (currentUserId.value === null) {
       eligibleGroups.value = []
-      errorMessage.value = 'Nutzerprofil konnte nicht ermittelt werden.'
+      createErrorMessage.value = 'Nutzerprofil konnte nicht ermittelt werden.'
       return
     }
 
@@ -363,7 +577,7 @@ const loadEligibleGroups = async () => {
     eligibleGroups.value = eligible.filter((group): group is EligibleGroup => group !== null)
   } catch {
     eligibleGroups.value = []
-    errorMessage.value = 'Gruppen konnten nicht geladen werden.'
+    createErrorMessage.value = 'Gruppen konnten nicht geladen werden.'
   } finally {
     isLoadingEligibleGroups.value = false
   }
@@ -371,6 +585,7 @@ const loadEligibleGroups = async () => {
 
 const openCreateForm = async () => {
   successMessage.value = ''
+  errorMessage.value = ''
   resetForm()
   showCreateForm.value = true
   await loadEligibleGroups()
@@ -402,23 +617,80 @@ const formatDateTime = (value: string): string => {
   })
 }
 
-const loadParticipantActivities = async () => {
-  isLoadingParticipantActivities.value = true
-  participantActivitiesError.value = ''
+const loadActivities = async () => {
+  isLoadingActivities.value = true
+  activitiesError.value = ''
 
   try {
+    await loadCurrentUserId()
     const activities = await activityService.getMyActivities()
-    participantActivities.value = [...activities].sort((a, b) => {
+    const sorted = [...activities].sort((a, b) => {
       const left = new Date(a.startTime).getTime()
       const right = new Date(b.startTime).getTime()
       return left - right
     })
+
+    const statuses = await Promise.all(
+      sorted.map(async (activity) => {
+        const status = await getOwnStatusForActivity(activity.id)
+        return [activity.id, status] as const
+      })
+    )
+
+    allActivities.value = sorted
+    activityStatuses.value = Object.fromEntries(statuses)
   } catch {
-    participantActivities.value = []
-    participantActivitiesError.value = 'Aktivitaeten konnten nicht geladen werden.'
+    allActivities.value = []
+    activityStatuses.value = {}
+    activitiesError.value = 'Aktivitaeten konnten nicht geladen werden.'
   } finally {
-    isLoadingParticipantActivities.value = false
+    isLoadingActivities.value = false
   }
+}
+
+const isActionLoading = (activityId: number): boolean => Boolean(actionLoadingById.value[activityId])
+
+const respondToActivity = async (activityId: number, status: ParticipationStatus) => {
+  if (!Number.isFinite(activityId)) return
+  if (isActionLoading(activityId)) return
+
+  actionLoadingById.value = {
+    ...actionLoadingById.value,
+    [activityId]: true
+  }
+
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    await activityService.respondToActivity(activityId, status)
+    activityStatuses.value = {
+      ...activityStatuses.value,
+      [activityId]: status
+    }
+    successMessage.value = status === 'ACCEPTED' ? 'Du hast erfolgreich zugesagt.' : 'Du hast erfolgreich abgesagt.'
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      errorMessage.value = backendMessage || 'Antwort zur Aktivitaet konnte nicht gespeichert werden.'
+    } else {
+      errorMessage.value = 'Antwort zur Aktivitaet konnte nicht gespeichert werden.'
+    }
+  } finally {
+    const nextMap = { ...actionLoadingById.value }
+    delete nextMap[activityId]
+    actionLoadingById.value = nextMap
+  }
+}
+
+const openDetails = (activity: Activity) => {
+  selectedActivity.value = activity
+  showDetailsModal.value = true
+}
+
+const closeDetails = () => {
+  showDetailsModal.value = false
+  selectedActivity.value = null
 }
 
 const saveActivity = async () => {
@@ -430,12 +702,12 @@ const saveActivity = async () => {
   const time = form.time
 
   if (!Number.isFinite(groupId) || groupId <= 0 || !title || !date || !time) {
-    errorMessage.value = 'Bitte fuelle alle Pflichtfelder aus.'
+    createErrorMessage.value = 'Bitte fuelle alle Pflichtfelder aus.'
     return
   }
 
   isSubmitting.value = true
-  errorMessage.value = ''
+  createErrorMessage.value = ''
 
   try {
     const startTime = buildLocalDateTime(date, time)
@@ -450,15 +722,16 @@ const saveActivity = async () => {
     })
 
     successMessage.value = 'Aktivitaet wurde erfolgreich gespeichert.'
+    errorMessage.value = ''
     showCreateForm.value = false
     resetForm()
-    await loadParticipantActivities()
+    await loadActivities()
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      errorMessage.value = backendMessage || 'Aktivitaet konnte nicht gespeichert werden.'
+      createErrorMessage.value = backendMessage || 'Aktivitaet konnte nicht gespeichert werden.'
     } else {
-      errorMessage.value = 'Aktivitaet konnte nicht gespeichert werden.'
+      createErrorMessage.value = 'Aktivitaet konnte nicht gespeichert werden.'
     }
   } finally {
     isSubmitting.value = false
@@ -467,6 +740,6 @@ const saveActivity = async () => {
 
 onMounted(() => {
   void loadEligibleGroups()
-  void loadParticipantActivities()
+  void loadActivities()
 })
 </script>
