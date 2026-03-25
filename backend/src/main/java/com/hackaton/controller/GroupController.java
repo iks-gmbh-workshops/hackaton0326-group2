@@ -1,8 +1,10 @@
 package com.hackaton.controller;
 
+import com.hackaton.dto.activity.ActivityResponse;
 import com.hackaton.dto.group.*;
 import com.hackaton.model.enums.UserRole;
 import com.hackaton.security.CustomUserDetails;
+import com.hackaton.service.ActivityService;
 import com.hackaton.service.GroupService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.List;
 public class GroupController {
 
     private final GroupService groupService;
+    private final ActivityService activityService;
 
     @PostMapping
     public ResponseEntity<GroupResponse> createGroup(@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -95,6 +98,13 @@ public class GroupController {
         UserRole userRole = UserRole.valueOf(extractRole(userDetails));
         groupService.removeMember(id, uid, userDetails.getId(), userRole);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/activities")
+    public ResponseEntity<List<ActivityResponse>> getGroupActivities(@PathVariable Long id,
+                                                                     @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<ActivityResponse> response = activityService.getGroupActivities(id, userDetails.getId());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/members/{uid}/role")
