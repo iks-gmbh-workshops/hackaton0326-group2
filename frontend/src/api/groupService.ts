@@ -18,6 +18,12 @@ export interface GroupInvitation {
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED'
 }
 
+export interface CreateGroupRequest {
+  name: string
+  description?: string
+  members?: string[]
+}
+
 export const groupService = {
   // Get all groups of current user
   getMyGroups: async (): Promise<Group[]> => {
@@ -48,8 +54,13 @@ export const groupService = {
   },
 
   // Create a new group
-  createGroup: async (name: string, description: string): Promise<Group> => {
-    const response = await api.post('/groups', { name, description })
+  createGroup: async (payloadOrName: CreateGroupRequest | string, description = ''): Promise<Group> => {
+    const payload: CreateGroupRequest =
+      typeof payloadOrName === 'string'
+        ? { name: payloadOrName, ...(description ? { description } : {}) }
+        : payloadOrName
+
+    const response = await api.post('/groups', payload)
     return response.data
   }
 }
