@@ -74,5 +74,10 @@ export const groupService = {
   updateGroup: async (groupId: number, payload: UpdateGroupRequest): Promise<Group> => {
     const response = await api.put(`/groups/${groupId}`, payload)
     return response.data
+  },
+
+  // Delete a group
+  deleteGroup: async (groupId: number): Promise<void> => {
+    await api.delete(`/groups/${groupId}`)
   }
 }

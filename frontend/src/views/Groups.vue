@@ -48,7 +48,7 @@
                     type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-600 transition hover:bg-gray-100 hover:text-blue-700"
                     aria-label="Gruppe bearbeiten"
-                    :disabled="isSubmitting || isEditSubmitting"
+                    :disabled="isSubmitting || isEditSubmitting || isDeletingGroup"
                     @click="openEditForm(group)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
@@ -191,7 +191,7 @@
             type="button"
             class="text-gray-500 hover:text-gray-700 text-xl leading-none"
             aria-label="Popup schliessen"
-            :disabled="isEditSubmitting"
+            :disabled="isEditSubmitting || isDeletingGroup"
             @click="closeEditForm"
           >
             x
@@ -216,7 +216,7 @@
               v-model.trim="editForm.groupName"
               type="text"
               required
-              :disabled="isEditSubmitting"
+              :disabled="isEditSubmitting || isDeletingGroup"
               placeholder="z. B. Laufgruppe Mittwoch"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -230,7 +230,7 @@
               id="editDescription"
               v-model.trim="editForm.description"
               rows="3"
-              :disabled="isEditSubmitting"
+              :disabled="isEditSubmitting || isDeletingGroup"
               placeholder="Kurze Beschreibung der Gruppe"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -245,16 +245,16 @@
                 id="editMemberInput"
                 v-model.trim="editMemberInput"
                 type="text"
-                :disabled="isEditSubmitting"
+                :disabled="isEditSubmitting || isDeletingGroup"
                 placeholder="Benutzername oder E-Mail-Adresse"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @keyup.enter.prevent="addEditMember"
               />
               <button
                 type="button"
-                :disabled="isEditSubmitting"
+                :disabled="isEditSubmitting || isDeletingGroup"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting }"
+                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup }"
                 @click="addEditMember"
               >
                 +
@@ -270,7 +270,7 @@
                 <span>{{ member }}</span>
                 <button
                   type="button"
-                  :disabled="isEditSubmitting"
+                  :disabled="isEditSubmitting || isDeletingGroup"
                   class="text-red-600 hover:text-red-700"
                   @click="removeEditMember(index)"
                 >
@@ -281,12 +281,21 @@
           </div>
         </div>
 
-        <div class="mt-8 pt-5 border-t border-gray-200">
+        <div class="mt-8 pt-5 border-t border-gray-200 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <button
+            type="button"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
+            class="w-full md:w-auto px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
+            @click="deleteGroup"
+          >
+            {{ isDeletingGroup ? 'Gruppe wird geloescht...' : 'Gruppe loeschen' }}
+          </button>
           <button
             type="submit"
-            :disabled="isEditSubmitting || isLoadingEditData"
+            :disabled="isEditSubmitting || isLoadingEditData || isDeletingGroup"
             class="w-full md:w-auto px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData }"
+            :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup }"
           >
             {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Aenderungen speichern' }}
           </button>
@@ -315,6 +324,7 @@ const isEditSubmitting = ref(false)
 const isLoadingEditData = ref(false)
 const editErrorMessage = ref('')
 const editingGroupId = ref<number | null>(null)
+const isDeletingGroup = ref(false)
 
 const form = reactive({
   groupName: '',
@@ -357,7 +367,7 @@ const closeCreateForm = () => {
 }
 
 const closeEditForm = () => {
-  if (isEditSubmitting.value || isLoadingEditData.value) return
+  if (isEditSubmitting.value || isLoadingEditData.value || isDeletingGroup.value) return
   editErrorMessage.value = ''
   showEditForm.value = false
   resetEditForm()
@@ -407,7 +417,7 @@ const extractMembers = (groupDetails: unknown): string[] => {
 }
 
 const openEditForm = async (group: Group) => {
-  if (isSubmitting.value || isEditSubmitting.value) return
+  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value) return
 
   resetEditForm()
   editErrorMessage.value = ''
@@ -511,6 +521,35 @@ const updateGroup = async () => {
     }
   } finally {
     isEditSubmitting.value = false
+  }
+}
+
+const deleteGroup = async () => {
+  const groupId = editingGroupId.value
+  if (!groupId || isDeletingGroup.value || isEditSubmitting.value || isLoadingEditData.value) return
+
+  const confirmed = window.confirm('Moechtest du diese Gruppe wirklich loeschen?')
+  if (!confirmed) return
+
+  isDeletingGroup.value = true
+  editErrorMessage.value = ''
+
+  try {
+    await groupService.deleteGroup(groupId)
+    await loadGroups()
+
+    successMessage.value = 'Gruppe wurde erfolgreich geloescht.'
+    showEditForm.value = false
+    resetEditForm()
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editErrorMessage.value = backendMessage || 'Gruppe konnte nicht geloescht werden.'
+    } else {
+      editErrorMessage.value = 'Gruppe konnte nicht geloescht werden.'
+    }
+  } finally {
+    isDeletingGroup.value = false
   }
 }
 
