@@ -3,47 +3,27 @@
     <h1 class="mb-6 text-2xl font-bold text-gray-900">Registrierung</h1>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
-      <div>
-        <label for="username" class="mb-1 block text-sm font-medium text-gray-700">
-          Benutzername (Pflicht)
-        </label>
-        <input
-          id="username"
-          v-model="form.username"
-          type="text"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="username"
-        />
-      </div>
+      <UsernameField
+        id="username"
+        v-model="form.username"
+        label="Benutzername (Pflicht)"
+        :disabled="isSubmitting"
+      />
 
-      <div>
-        <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-          E-Mail-Adresse (Pflicht)
-        </label>
-        <input
-          id="email"
-          v-model="form.email"
-          type="email"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="email"
-        />
-      </div>
+      <EmailField
+        id="email"
+        v-model="form.email"
+        label="E-Mail-Adresse (Pflicht)"
+        :disabled="isSubmitting"
+      />
 
-      <div>
-        <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
-          Passwort (Pflicht)
-        </label>
-        <input
-          id="password"
-          v-model="form.password"
-          type="password"
-          required
-          class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          autocomplete="new-password"
-        />
-      </div>
+      <PasswordFiled
+        id="password"
+        v-model="form.password"
+        label="Passwort (Pflicht)"
+        autocomplete="new-password"
+        :disabled="isSubmitting"
+      />
 
       <div>
         <label for="firstName" class="mb-1 block text-sm font-medium text-gray-700">
@@ -110,6 +90,9 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import axios from 'axios'
+import EmailField from '@/components/fields/EmailField.vue'
+import PasswordFiled from '@/components/fields/PasswordFiled.vue'
+import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
 
 const form = reactive({
