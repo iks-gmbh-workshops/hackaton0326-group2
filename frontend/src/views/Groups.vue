@@ -9,12 +9,24 @@
       <div class="bg-white rounded-lg shadow p-6 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h2 class="app-card-title">Meine Gruppen</h2>
-          <button
-            class="app-btn-primary"
-            @click="openCreateForm"
-          >
-            + Neue Gruppe erstellen
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="app-btn-primary"
+              @click="openCreateForm"
+            >
+              + Neue Gruppe erstellen
+            </button>
+            <button
+              type="button"
+              class="app-btn-secondary"
+              :disabled="isJoiningByToken"
+              :class="{ 'cursor-not-allowed opacity-70': isJoiningByToken }"
+              @click="openJoinByTokenForm"
+            >
+              Mit Einladungstoken beitreten
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -134,7 +146,7 @@
 
           <div>
             <label for="memberInput" class="block text-sm font-medium text-gray-700 mb-1">
-              Gruppenmitglieder hinzufuegen
+              Gruppenmitglieder hinzufügen
             </label>
             <div class="flex gap-2">
               <input
@@ -253,7 +265,7 @@
 
           <div>
             <label v-if="!isViewOnlyMode" for="editMemberInput" class="block text-sm font-medium text-gray-700 mb-1">
-              Gruppenmitglieder hinzufuegen
+              Gruppenmitglieder hinzufügen
             </label>
             <div v-if="!isViewOnlyMode" class="flex gap-2">
               <input
@@ -376,7 +388,7 @@
             :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
             @click="deleteGroup"
           >
-            {{ isDeletingGroup ? 'Gruppe wird geloescht...' : 'Gruppe loeschen' }}
+            {{ isDeletingGroup ? 'Gruppe wird gelöscht...' : 'Gruppe löschen' }}
           </button>
           <button
             type="submit"
@@ -384,7 +396,72 @@
             class="app-btn-success w-full md:w-auto"
             :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isLoadingEditData || isDeletingGroup || isRemovingMember }"
           >
-            {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Aenderungen speichern' }}
+            {{ isEditSubmitting ? 'Gruppe wird gespeichert...' : 'Änderungen speichern' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div
+      v-if="showJoinByTokenForm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeJoinByTokenForm"
+    >
+      <form
+        class="w-full max-w-lg bg-white rounded-lg shadow-xl p-6 md:p-8 fade-in"
+        @submit.prevent="joinGroupByToken"
+      >
+        <div class="flex items-start justify-between mb-6">
+          <h2 class="app-card-title">Mit Einladungstoken beitreten</h2>
+          <button
+            type="button"
+            class="text-gray-500 hover:text-gray-700 text-xl leading-none"
+            aria-label="Popup schliessen"
+            :disabled="isJoiningByToken"
+            @click="closeJoinByTokenForm"
+          >
+            x
+          </button>
+        </div>
+
+        <p v-if="joinByTokenErrorMessage" class="app-alert-error mb-4">
+          {{ joinByTokenErrorMessage }}
+        </p>
+
+        <div class="space-y-5">
+          <div>
+            <label for="joinTokenInput" class="block text-sm font-medium text-gray-700 mb-1">
+              Einladungstoken <span class="text-red-600">*</span>
+            </label>
+            <input
+              id="joinTokenInput"
+              v-model.trim="joinByTokenInput"
+              type="text"
+              required
+              :disabled="isJoiningByToken"
+              placeholder="Token eingeben"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        <div class="mt-8 pt-5 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            :disabled="isJoiningByToken"
+            class="app-btn-secondary w-full sm:w-auto"
+            :class="{ 'cursor-not-allowed opacity-70': isJoiningByToken }"
+            @click="closeJoinByTokenForm"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="submit"
+            :disabled="isJoiningByToken"
+            class="app-btn-success w-full sm:w-auto"
+            :class="{ 'cursor-not-allowed opacity-70': isJoiningByToken }"
+          >
+            {{ isJoiningByToken ? 'Beitritt läuft...' : 'Beitreten' }}
           </button>
         </div>
       </form>
@@ -408,6 +485,7 @@ const groups = ref<Group[]>([])
 const isLoadingGroups = ref(false)
 const groupsError = ref('')
 const showEditForm = ref(false)
+const showJoinByTokenForm = ref(false)
 const editMemberInput = ref('')
 const isEditSubmitting = ref(false)
 const isLoadingEditData = ref(false)
@@ -425,6 +503,9 @@ const groupActivities = ref<GroupActivityRow[]>([])
 const isLoadingGroupActivities = ref(false)
 const groupActivitiesError = ref('')
 const updatingActivityStatus = ref<Record<number, boolean>>({})
+const joinByTokenInput = ref('')
+const joinByTokenErrorMessage = ref('')
+const isJoiningByToken = ref(false)
 
 interface GroupMemberRow {
   userId: number | null
@@ -517,8 +598,8 @@ const asString = (value: unknown): string => (typeof value === 'string' ? value.
 
 const formatMemberStatus = (value: unknown): string => {
   const status = asString(value).toUpperCase()
-  if (status === 'ACTIVE') return 'Aktiv (ACTIVE)'
-  if (status === 'PENDING') return 'Warten auf Rueckmeldung (PENDING)'
+  if (status === 'ACTIVE') return 'Aktiv'
+  if (status === 'PENDING') return 'Warten auf Rueckmeldung'
   return status ? `${status}` : '-'
 }
 
@@ -603,19 +684,33 @@ const closeEditForm = () => {
   resetEditForm()
 }
 
+const openJoinByTokenForm = () => {
+  if (isJoiningByToken.value) return
+  joinByTokenInput.value = ''
+  joinByTokenErrorMessage.value = ''
+  successMessage.value = ''
+  showJoinByTokenForm.value = true
+}
+
+const closeJoinByTokenForm = () => {
+  if (isJoiningByToken.value) return
+  joinByTokenErrorMessage.value = ''
+  showJoinByTokenForm.value = false
+}
+
 const addMember = () => {
   const value = memberInput.value.trim()
   if (!value) return
   const normalizedValue = normalizeEmail(value)
 
   if (!isValidEmail(normalizedValue)) {
-    memberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
+    memberErrorMessage.value = 'Bitte gib eine gültige E-Mail-Adresse ein.'
     return
   }
 
   const alreadyAdded = form.members.some((member) => normalizeEmail(member) === normalizedValue)
   if (alreadyAdded) {
-    memberErrorMessage.value = 'Diese E-Mail-Adresse wurde bereits hinzugefuegt.'
+    memberErrorMessage.value = 'Diese E-Mail-Adresse wurde bereits hinzugefügt.'
     return
   }
 
@@ -639,7 +734,7 @@ const addEditMember = async () => {
   if (!groupId) return
 
   if (!isValidEmail(normalizedValue)) {
-    editMemberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
+    editMemberErrorMessage.value = 'Bitte gib eine gültige E-Mail-Adresse ein.'
     return
   }
 
@@ -659,7 +754,7 @@ const addEditMember = async () => {
       label: normalizedValue,
       email: normalizedValue,
       role: 'MITGLIED',
-      statusLabel: 'Warten auf Rueckmeldung (PENDING)',
+      statusLabel: 'Warten auf Rueckmeldung',
       joinedAtLabel: '-'
     })
     editMemberInput.value = ''
@@ -667,9 +762,9 @@ const addEditMember = async () => {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht hinzugefuegt werden.'
+      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht hinzugefügt werden.'
     } else {
-      editMemberErrorMessage.value = 'Mitglied konnte nicht hinzugefuegt werden.'
+      editMemberErrorMessage.value = 'Mitglied konnte nicht hinzugefügt werden.'
     }
   } finally {
     isInvitingMember.value = false
@@ -722,7 +817,7 @@ const extractMembers = (membersPayload: unknown): GroupMemberRow[] => {
           userId: null,
           label: email || '-',
           email,
-          role: 'MITGLIED',
+          role: 'Mitglied',
           statusLabel: '-',
           joinedAtLabel: '-'
         }
@@ -971,6 +1066,31 @@ const createGroup = async () => {
   }
 }
 
+const joinGroupByToken = async () => {
+  const token = joinByTokenInput.value.trim()
+  if (!token || isJoiningByToken.value) return
+
+  isJoiningByToken.value = true
+  joinByTokenErrorMessage.value = ''
+
+  try {
+    await groupService.joinByInviteToken(token)
+    await loadGroups()
+    successMessage.value = 'Du bist der Gruppe erfolgreich beigetreten.'
+    showJoinByTokenForm.value = false
+    joinByTokenInput.value = ''
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      joinByTokenErrorMessage.value = backendMessage || 'Beitritt mit Einladungstoken nicht möglich.'
+    } else {
+      joinByTokenErrorMessage.value = 'Beitritt mit Einladungstoken nicht möglich.'
+    }
+  } finally {
+    isJoiningByToken.value = false
+  }
+}
+
 const updateGroup = async () => {
   if (isViewOnlyMode.value) return
   const groupId = editingGroupId.value
@@ -1008,7 +1128,7 @@ const deleteGroup = async () => {
   const groupId = editingGroupId.value
   if (!groupId || isDeletingGroup.value || isEditSubmitting.value || isLoadingEditData.value) return
 
-  const confirmed = window.confirm('Moechtest du diese Gruppe wirklich loeschen?')
+  const confirmed = window.confirm('Möchtest du diese Gruppe wirklich löschen?')
   if (!confirmed) return
 
   isDeletingGroup.value = true
@@ -1018,15 +1138,15 @@ const deleteGroup = async () => {
     await groupService.deleteGroup(groupId)
     await loadGroups()
 
-    successMessage.value = 'Gruppe wurde erfolgreich geloescht.'
+    successMessage.value = 'Gruppe wurde erfolgreich gelöscht.'
     showEditForm.value = false
     resetEditForm()
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      editErrorMessage.value = backendMessage || 'Gruppe konnte nicht geloescht werden.'
+      editErrorMessage.value = backendMessage || 'Gruppe konnte nicht gelöscht werden.'
     } else {
-      editErrorMessage.value = 'Gruppe konnte nicht geloescht werden.'
+      editErrorMessage.value = 'Gruppe konnte nicht gelöscht werden.'
     }
   } finally {
     isDeletingGroup.value = false
