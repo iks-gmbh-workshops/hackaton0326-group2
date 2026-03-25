@@ -126,9 +126,9 @@
               <input
                 id="memberInput"
                 v-model.trim="memberInput"
-                type="text"
+                type="email"
                 :disabled="isSubmitting"
-                placeholder="Benutzername oder E-Mail-Adresse"
+                placeholder="mitglied@beispiel.de"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @keyup.enter.prevent="addMember"
               />
@@ -142,6 +142,7 @@
                 +
               </button>
             </div>
+            <p v-if="memberErrorMessage" class="mt-2 text-sm text-red-600">{{ memberErrorMessage }}</p>
 
             <ul v-if="form.members.length" class="mt-3 space-y-2">
               <li
@@ -244,40 +245,56 @@
               <input
                 id="editMemberInput"
                 v-model.trim="editMemberInput"
-                type="text"
-                :disabled="isEditSubmitting || isDeletingGroup"
-                placeholder="Benutzername oder E-Mail-Adresse"
+                type="email"
+                :disabled="isEditSubmitting || isDeletingGroup || isInvitingMember"
+                placeholder="mitglied@beispiel.de"
                 class="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @keyup.enter.prevent="addEditMember"
               />
               <button
                 type="button"
-                :disabled="isEditSubmitting || isDeletingGroup"
+                :disabled="isEditSubmitting || isDeletingGroup || isInvitingMember"
                 class="app-btn-primary"
-                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup }"
+                :class="{ 'cursor-not-allowed opacity-70': isEditSubmitting || isDeletingGroup || isInvitingMember }"
                 @click="addEditMember"
               >
-                +
+                {{ isInvitingMember ? '...' : '+' }}
               </button>
             </div>
+            <p v-if="editMemberErrorMessage" class="mt-2 text-sm text-red-600">{{ editMemberErrorMessage }}</p>
 
-            <ul v-if="editForm.members.length" class="mt-3 space-y-2">
-              <li
-                v-for="(member, index) in editForm.members"
-                :key="`${member}-${index}`"
-                class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700"
-              >
-                <span>{{ member }}</span>
-                <button
-                  type="button"
-                  :disabled="isEditSubmitting || isDeletingGroup"
-                  class="text-red-600 hover:text-red-700"
-                  @click="removeEditMember(index)"
-                >
-                  Entfernen
-                </button>
-              </li>
-            </ul>
+            <div v-if="editForm.members.length" class="mt-3 overflow-x-auto">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>Mitglied</th>
+                    <th>Rolle</th>
+                    <th>Beitritt</th>
+                    <th class="app-table-col-right">Aktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(member, index) in editForm.members"
+                    :key="`${member.email || member.label}-${index}`"
+                  >
+                    <td class="app-table-cell-main">{{ member.label }}</td>
+                    <td>{{ member.role }}</td>
+                    <td>{{ member.joinedAtLabel }}</td>
+                    <td class="app-table-cell-right">
+                      <button
+                        type="button"
+                        :disabled="isEditSubmitting || isDeletingGroup"
+                        class="text-red-600 hover:text-red-700"
+                        @click="removeEditMember(index)"
+                      >
+                        Entfernen
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -323,8 +340,18 @@ const editMemberInput = ref('')
 const isEditSubmitting = ref(false)
 const isLoadingEditData = ref(false)
 const editErrorMessage = ref('')
+const memberErrorMessage = ref('')
+const editMemberErrorMessage = ref('')
+const isInvitingMember = ref(false)
 const editingGroupId = ref<number | null>(null)
 const isDeletingGroup = ref(false)
+
+interface GroupMemberRow {
+  label: string
+  email: string
+  role: string
+  joinedAtLabel: string
+}
 
 const form = reactive({
   groupName: '',
@@ -335,14 +362,43 @@ const form = reactive({
 const editForm = reactive({
   groupName: '',
   description: '',
-  members: [] as string[],
+  members: [] as GroupMemberRow[],
 })
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const normalizeEmail = (value: string): string => value.trim().toLowerCase()
+
+const isValidEmail = (value: string): boolean => EMAIL_REGEX.test(normalizeEmail(value))
+
+const resolveGroupId = (group: unknown): number | null => {
+  if (!group || typeof group !== 'object') return null
+  const record = group as Record<string, unknown>
+  const candidate = record.id ?? record.groupId
+  const parsed = Number(candidate)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const formatDateLabel = (value: unknown): string => {
+  if (typeof value !== 'string' || !value.trim()) return '-'
+  const parsedDate = new Date(value)
+  if (Number.isNaN(parsedDate.getTime())) return '-'
+
+  return parsedDate.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const asString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
 
 const resetForm = () => {
   form.groupName = ''
   form.description = ''
   form.members = []
   memberInput.value = ''
+  memberErrorMessage.value = ''
 }
 
 const resetEditForm = () => {
@@ -350,6 +406,7 @@ const resetEditForm = () => {
   editForm.description = ''
   editForm.members = []
   editMemberInput.value = ''
+  editMemberErrorMessage.value = ''
   editingGroupId.value = null
 }
 
@@ -376,28 +433,78 @@ const closeEditForm = () => {
 const addMember = () => {
   const value = memberInput.value.trim()
   if (!value) return
+  const normalizedValue = normalizeEmail(value)
 
-  form.members.push(value)
+  if (!isValidEmail(normalizedValue)) {
+    memberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
+    return
+  }
+
+  const alreadyAdded = form.members.some((member) => normalizeEmail(member) === normalizedValue)
+  if (alreadyAdded) {
+    memberErrorMessage.value = 'Diese E-Mail-Adresse wurde bereits hinzugefuegt.'
+    return
+  }
+
+  form.members.push(normalizedValue)
   memberInput.value = ''
+  memberErrorMessage.value = ''
 }
 
 const removeMember = (index: number) => {
   form.members.splice(index, 1)
 }
 
-const addEditMember = () => {
+const addEditMember = async () => {
+  if (isInvitingMember.value || isEditSubmitting.value || isDeletingGroup.value || isLoadingEditData.value) return
+
   const value = editMemberInput.value.trim()
   if (!value) return
+  const normalizedValue = normalizeEmail(value)
+  const groupId = editingGroupId.value
+  if (!groupId) return
 
-  editForm.members.push(value)
-  editMemberInput.value = ''
+  if (!isValidEmail(normalizedValue)) {
+    editMemberErrorMessage.value = 'Bitte gib eine gueltige E-Mail-Adresse ein.'
+    return
+  }
+
+  const alreadyAdded = editForm.members.some((member) => normalizeEmail(member.email) === normalizedValue)
+  if (alreadyAdded) {
+    editMemberErrorMessage.value = 'Diese E-Mail-Adresse ist bereits Mitglied oder eingeladen.'
+    return
+  }
+
+  isInvitingMember.value = true
+  editMemberErrorMessage.value = ''
+
+  try {
+    await groupService.inviteMember(groupId, { email: normalizedValue })
+    editForm.members.push({
+      label: normalizedValue,
+      email: normalizedValue,
+      role: 'MITGLIED',
+      joinedAtLabel: '-'
+    })
+    editMemberInput.value = ''
+    successMessage.value = `Einladung an ${normalizedValue} wurde versendet.`
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+      editMemberErrorMessage.value = backendMessage || 'Mitglied konnte nicht hinzugefuegt werden.'
+    } else {
+      editMemberErrorMessage.value = 'Mitglied konnte nicht hinzugefuegt werden.'
+    }
+  } finally {
+    isInvitingMember.value = false
+  }
 }
 
 const removeEditMember = (index: number) => {
   editForm.members.splice(index, 1)
 }
 
-const extractMembers = (groupDetails: unknown): string[] => {
+const extractMembers = (groupDetails: unknown): GroupMemberRow[] => {
   if (!groupDetails || typeof groupDetails !== 'object') return []
 
   const details = groupDetails as Record<string, unknown>
@@ -406,18 +513,43 @@ const extractMembers = (groupDetails: unknown): string[] => {
 
   return rawMembers
     .map((member) => {
-      if (typeof member === 'string') return member
-      if (!member || typeof member !== 'object') return ''
+      if (typeof member === 'string') {
+        const email = asString(member)
+        return {
+          label: email || '-',
+          email,
+          role: 'MITGLIED',
+          joinedAtLabel: '-'
+        }
+      }
+      if (!member || typeof member !== 'object') return null
 
       const data = member as Record<string, unknown>
-      const candidate = data.username ?? data.email ?? data.name
-      return typeof candidate === 'string' ? candidate : ''
+      const displayName =
+        asString(data.displayName) ||
+        asString(data.username) ||
+        asString(data.name) ||
+        asString(data.fullName)
+      const email = asString(data.email) || asString(data.userEmail)
+      const role =
+        asString(data.role) ||
+        asString(data.memberRole) ||
+        asString(data.groupRole) ||
+        'MITGLIED'
+      const joinedAtRaw = data.joinedAt ?? data.createdAt ?? data.memberSince ?? data.joinDate
+
+      return {
+        label: displayName || email || '-',
+        email,
+        role,
+        joinedAtLabel: formatDateLabel(joinedAtRaw)
+      }
     })
-    .filter((member) => member.length > 0)
+    .filter((member): member is GroupMemberRow => Boolean(member))
 }
 
 const openEditForm = async (group: Group) => {
-  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value) return
+  if (isSubmitting.value || isEditSubmitting.value || isDeletingGroup.value || isInvitingMember.value) return
 
   resetEditForm()
   editErrorMessage.value = ''
@@ -467,17 +599,33 @@ const createGroup = async () => {
 
   isSubmitting.value = true
   errorMessage.value = ''
+  memberErrorMessage.value = ''
 
   try {
     const payload: CreateGroupRequest = { name }
     const description = form.description.trim()
     if (description) payload.description = description
-    if (form.members.length) payload.members = [...form.members]
+    const createdGroup = await groupService.createGroup(payload)
+    const groupId = resolveGroupId(createdGroup)
 
-    await groupService.createGroup(payload)
+    if (groupId && form.members.length) {
+      const inviteResults = await Promise.allSettled(
+        form.members.map((email) => groupService.inviteMember(groupId, { email: normalizeEmail(email) }))
+      )
+      const failedInvites = inviteResults.filter((result) => result.status === 'rejected').length
+      if (failedInvites > 0) {
+        successMessage.value = `Gruppe angelegt, aber ${failedInvites} Einladung(en) konnten nicht versendet werden.`
+      } else {
+        successMessage.value = 'Gruppe wurde erfolgreich angelegt und Einladungen wurden versendet.'
+      }
+    } else if (!groupId && form.members.length) {
+      successMessage.value = 'Gruppe wurde angelegt. Einladungen konnten nicht automatisch versendet werden.'
+    } else {
+      successMessage.value = 'Gruppe wurde erfolgreich angelegt.'
+    }
+
     await loadGroups()
 
-    successMessage.value = 'Gruppe wurde erfolgreich angelegt.'
     showCreateForm.value = false
     resetForm()
   } catch (error) {
@@ -495,7 +643,7 @@ const createGroup = async () => {
 const updateGroup = async () => {
   const groupId = editingGroupId.value
   const name = editForm.groupName.trim()
-  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value) return
+  if (!groupId || !name || isEditSubmitting.value || isLoadingEditData.value || isInvitingMember.value) return
 
   isEditSubmitting.value = true
   editErrorMessage.value = ''
@@ -504,7 +652,6 @@ const updateGroup = async () => {
     const payload: UpdateGroupRequest = { name }
     const description = editForm.description.trim()
     if (description) payload.description = description
-    payload.members = [...editForm.members]
 
     await groupService.updateGroup(groupId, payload)
     await loadGroups()

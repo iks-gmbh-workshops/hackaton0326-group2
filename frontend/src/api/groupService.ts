@@ -21,13 +21,15 @@ export interface GroupInvitation {
 export interface CreateGroupRequest {
   name: string
   description?: string
-  members?: string[]
 }
 
 export interface UpdateGroupRequest {
   name: string
   description?: string
-  members?: string[]
+}
+
+export interface InviteGroupMemberRequest {
+  email: string
 }
 
 export const groupService = {
@@ -74,6 +76,11 @@ export const groupService = {
   updateGroup: async (groupId: number, payload: UpdateGroupRequest): Promise<Group> => {
     const response = await api.put(`/groups/${groupId}`, payload)
     return response.data
+  },
+
+  // Invite a member to an existing group
+  inviteMember: async (groupId: number, payload: InviteGroupMemberRequest): Promise<void> => {
+    await api.post(`/groups/${groupId}/invite`, payload)
   },
 
   // Delete a group
