@@ -2,7 +2,7 @@
   <div>
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
     </div>
 
     <!-- Error State -->
@@ -23,7 +23,7 @@
       <div 
         v-for="activity in activities" 
         :key="activity.id"
-        class="p-4 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition"
+        class="p-4 border border-orange-200 bg-orange-50 rounded-lg hover:bg-orange-100 transition"
       >
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
@@ -34,8 +34,8 @@
                 {{ formatDateTime(activity.startTime) }} - {{ formatTime(activity.endTime) }}
               </span>
             </div>
-            <span class="inline-block mt-2 px-2 py-1 bg-red-200 text-red-800 text-xs font-semibold rounded">
-              Antwort erforderlich
+            <span class="inline-block mt-2 px-2 py-1 bg-orange-200 text-orange-800 text-xs font-semibold rounded">
+              PENDING
             </span>
           </div>
           <div class="flex gap-2 flex-shrink-0">
