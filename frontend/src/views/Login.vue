@@ -5,12 +5,12 @@
     <form class="space-y-4" @submit.prevent="onSubmit">
       <EmailField
         id="Email"
-        v-model="username"
-        label="Username"
+        v-model="email"
+        label="Email"
         :disabled="isSubmitting"
       />
 
-      <PasswordFiled
+      <PasswordField
         id="password"
         v-model="password"
         label="Passwort"
@@ -48,12 +48,11 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
-import PasswordFiled from '@/components/fields/PasswordFiled.vue'
-import UsernameField from '@/components/fields/UsernameField.vue'
+import PasswordField from '@/components/fields/PasswordField.vue'
 import { authService } from '../api/authService'
 import EmailField from '@/components/fields/EmailField.vue'
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
@@ -70,7 +69,7 @@ const onSubmit = async () => {
 
   try {
     const response = await authService.login({
-      email: username.value.trim(),
+      email: email.value.trim(),
       password: password.value
     })
 
