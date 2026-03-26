@@ -217,6 +217,29 @@
           <p><span class="font-semibold text-gray-900">Ort:</span> {{ displayOrDash(selectedActivity.location) }}</p>
           <p><span class="font-semibold text-gray-900">Beschreibung:</span> {{ displayOrDash(selectedActivity.description) }}</p>
         </div>
+
+        <div class="mt-5 border-t border-gray-200 pt-4">
+          <h3 class="mb-3 text-sm font-semibold text-gray-900">Teilnehmer</h3>
+          <p v-if="isLoadingParticipants" class="text-sm text-gray-500">
+            Teilnehmer werden geladen...
+          </p>
+          <p v-else-if="participantsError" class="text-sm text-red-600">
+            {{ participantsError }}
+          </p>
+          <p v-else-if="activityParticipants.length === 0" class="text-sm text-gray-500">
+            Keine Teilnehmer vorhanden.
+          </p>
+          <ul v-else class="space-y-2">
+            <li
+              v-for="participant in activityParticipants"
+              :key="participant.key"
+              class="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2"
+            >
+              <span class="text-sm text-gray-800">{{ participant.displayName }}</span>
+              <span class="text-xs font-semibold" :class="participant.statusClass">{{ participant.statusLabel }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -375,6 +398,12 @@ interface EligibleGroup {
 }
 
 type ParticipationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED'
+interface ActivityParticipantRow {
+  key: string
+  displayName: string
+  statusLabel: string
+  statusClass: string
+}
 
 const showCreateForm = ref(false)
 const isSubmitting = ref(false)
@@ -391,6 +420,9 @@ const activitiesError = ref('')
 const actionLoadingById = ref<Record<number, boolean>>({})
 const showDetailsModal = ref(false)
 const selectedActivity = ref<Activity | null>(null)
+const activityParticipants = ref<ActivityParticipantRow[]>([])
+const isLoadingParticipants = ref(false)
+const participantsError = ref('')
 
 const form = reactive({
   groupId: '',
@@ -473,6 +505,20 @@ const normalizeParticipationStatus = (value: unknown): ParticipationStatus => {
   if (status === 'ACCEPTED') return 'ACCEPTED'
   if (status === 'DECLINED') return 'DECLINED'
   return 'PENDING'
+}
+
+const participationStatusLabel = (value: unknown): string => {
+  const normalizedStatus = normalizeParticipationStatus(value)
+  if (normalizedStatus === 'ACCEPTED') return 'Zugesagt'
+  if (normalizedStatus === 'DECLINED') return 'Abgesagt'
+  return 'Offen'
+}
+
+const participationStatusClass = (value: unknown): string => {
+  const normalizedStatus = normalizeParticipationStatus(value)
+  if (normalizedStatus === 'ACCEPTED') return 'text-green-700'
+  if (normalizedStatus === 'DECLINED') return 'text-red-700'
+  return 'text-orange-600'
 }
 
 const getOwnStatusForActivity = async (activityId: number): Promise<ParticipationStatus> => {
@@ -683,14 +729,43 @@ const respondToActivity = async (activityId: number, status: ParticipationStatus
   }
 }
 
-const openDetails = (activity: Activity) => {
+const loadActivityParticipants = async (activityId: number): Promise<void> => {
+  isLoadingParticipants.value = true
+  participantsError.value = ''
+
+  try {
+    const participants = await activityService.getParticipants(activityId)
+    activityParticipants.value = participants.map((participant, index) => {
+      const userId = Number(participant.userId)
+      const displayName = asNonEmptyString(participant.displayName) || asNonEmptyString(participant.email) || `Nutzer ${userId}`
+      return {
+        key: Number.isFinite(userId) ? `${userId}` : `unknown-${index}`,
+        displayName,
+        statusLabel: participationStatusLabel(participant.status),
+        statusClass: participationStatusClass(participant.status)
+      }
+    })
+  } catch {
+    activityParticipants.value = []
+    participantsError.value = 'Teilnehmer konnten nicht geladen werden.'
+  } finally {
+    isLoadingParticipants.value = false
+  }
+}
+
+const openDetails = async (activity: Activity) => {
   selectedActivity.value = activity
+  activityParticipants.value = []
+  participantsError.value = ''
   showDetailsModal.value = true
+  await loadActivityParticipants(activity.id)
 }
 
 const closeDetails = () => {
   showDetailsModal.value = false
   selectedActivity.value = null
+  activityParticipants.value = []
+  participantsError.value = ''
 }
 
 const saveActivity = async () => {
