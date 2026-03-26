@@ -36,6 +36,26 @@ public class GroupController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/invitations")
+    public ResponseEntity<List<GroupInvitationResponse>> getMyInvitations(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<GroupInvitationResponse> response = groupService.getMyInvitations(userDetails.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/invitations/{invitationId}/accept")
+    public ResponseEntity<Void> acceptInvitation(@PathVariable Long invitationId,
+                                                  @AuthenticationPrincipal CustomUserDetails userDetails) {
+        groupService.acceptInvitation(invitationId, userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/invitations/{invitationId}/decline")
+    public ResponseEntity<Void> declineInvitation(@PathVariable Long invitationId,
+                                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
+        groupService.declineInvitation(invitationId, userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<GroupResponse> getGroup(@PathVariable Long id,
                                                   @AuthenticationPrincipal CustomUserDetails userDetails) {

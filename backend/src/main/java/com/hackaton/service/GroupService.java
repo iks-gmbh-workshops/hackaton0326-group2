@@ -107,8 +107,78 @@ public class GroupService {
     public void inviteMember(Long groupId, Long userId, UserRole userRole, InviteRequest request) {
         Group group = findGroup(groupId);
         checkVerwalterOrAdmin(userId, groupId, userRole);
+        User inviter = findUser(userId);
+
+        // Prüfe ob eingeladener User existiert
+        userRepository.findByEmail(request.getEmail()).ifPresent(invitedUser -> {
+            // Prüfe ob bereits Mitglied oder eingeladen
+            var existing = groupMemberRepository.findByUserIdAndGroupId(invitedUser.getId(), groupId);
+            if (existing.isPresent()) {
+                MemberStatus st = existing.get().getStatus();
+                if (st == MemberStatus.ACTIVE) {
+                    throw new ConflictException("User is already a member of this group");
+                }
+                if (st == MemberStatus.PENDING) {
+                    throw new ConflictException("User is already invited to this group");
+                }
+                // Status LEFT → erneut einladen
+                existing.get().setStatus(MemberStatus.PENDING);
+                existing.get().setInvitedBy(inviter);
+                groupMemberRepository.save(existing.get());
+                return;
+            }
+
+            GroupMember member = GroupMember.builder()
+                    .user(invitedUser)
+                    .group(group)
+                    .role(GroupRole.MITGLIED)
+                    .status(MemberStatus.PENDING)
+                    .invitedBy(inviter)
+                    .build();
+            groupMemberRepository.save(member);
+        });
 
         emailService.sendGroupInvitation(request.getEmail(), group.getName(), group.getInviteToken());
+    }
+
+    public List<GroupInvitationResponse> getMyInvitations(Long userId) {
+        List<GroupMember> pending = groupMemberRepository.findByUserIdAndStatus(userId, MemberStatus.PENDING);
+        return pending.stream()
+                .map(this::toInvitationResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void acceptInvitation(Long membershipId, Long userId) {
+        GroupMember member = groupMemberRepository.findById(membershipId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation not found"));
+
+        if (!member.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("Not your invitation");
+        }
+        if (member.getStatus() != MemberStatus.PENDING) {
+            throw new BadRequestException("Invitation is not pending");
+        }
+
+        member.setStatus(MemberStatus.ACTIVE);
+        member.setJoinedAt(LocalDateTime.now());
+        groupMemberRepository.save(member);
+    }
+
+    @Transactional
+    public void declineInvitation(Long membershipId, Long userId) {
+        GroupMember member = groupMemberRepository.findById(membershipId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation not found"));
+
+        if (!member.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("Not your invitation");
+        }
+        if (member.getStatus() != MemberStatus.PENDING) {
+            throw new BadRequestException("Invitation is not pending");
+        }
+
+        member.setStatus(MemberStatus.LEFT);
+        groupMemberRepository.save(member);
     }
 
     @Transactional
@@ -118,8 +188,17 @@ public class GroupService {
 
         User user = findUser(userId);
 
-        if (groupMemberRepository.existsByUserIdAndGroupId(userId, group.getId())) {
-            throw new ConflictException("User is already a member of this group");
+        var existing = groupMemberRepository.findByUserIdAndGroupId(userId, group.getId());
+        if (existing.isPresent()) {
+            GroupMember gm = existing.get();
+            if (gm.getStatus() == MemberStatus.ACTIVE) {
+                throw new ConflictException("User is already a member of this group");
+            }
+            // PENDING oder LEFT → aktivieren
+            gm.setStatus(MemberStatus.ACTIVE);
+            gm.setJoinedAt(LocalDateTime.now());
+            groupMemberRepository.save(gm);
+            return toResponse(group);
         }
 
         GroupMember member = GroupMember.builder()
@@ -250,6 +329,25 @@ public class GroupService {
                 .role(gm.getRole().name())
                 .status(gm.getStatus().name())
                 .joinedAt(gm.getJoinedAt())
+                .build();
+    }
+
+    private GroupInvitationResponse toInvitationResponse(GroupMember gm) {
+        Group group = gm.getGroup();
+        int memberCount = (int) group.getMembers().stream()
+                .filter(m -> m.getStatus() == MemberStatus.ACTIVE)
+                .count();
+
+        return GroupInvitationResponse.builder()
+                .id(gm.getId())
+                .groupId(group.getId())
+                .groupName(group.getName())
+                .description(group.getDescription())
+                .memberCount(memberCount)
+                .createdByName(group.getCreatedBy().getDisplayName())
+                .invitedByName(gm.getInvitedBy() != null ? gm.getInvitedBy().getDisplayName() : null)
+                .invitedAt(gm.getJoinedAt())
+                .status(gm.getStatus().name())
                 .build();
     }
 }
