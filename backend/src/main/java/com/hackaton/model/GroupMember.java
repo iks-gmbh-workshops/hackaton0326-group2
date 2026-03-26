@@ -42,4 +42,8 @@ public class GroupMember {
 
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invited_by")
+    private User invitedBy;
 }
