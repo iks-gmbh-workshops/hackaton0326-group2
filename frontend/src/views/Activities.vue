@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="app-page-title">Meine Aktivitaeten</h1>
+      <h1 class="app-page-title">Meine Aktivitäten</h1>
       <button class="app-btn-success" @click="openCreateForm">
-        Neue Aktivitaet erstellen
+        Neue Aktivität erstellen
       </button>
     </div>
 
@@ -15,7 +15,7 @@
     </p>
 
     <section class="bg-white rounded-lg shadow p-6 space-y-4">
-      <h2 class="app-card-title">Meine Aktivitaeten</h2>
+      <h2 class="app-card-title">Meine Aktivitäten</h2>
       <div class="overflow-x-auto">
         <table class="app-table">
           <thead>
@@ -29,13 +29,13 @@
           </thead>
           <tbody>
             <tr v-if="isLoadingActivities">
-              <td colspan="5" class="app-table-cell-muted">Lade Aktivitaeten...</td>
+              <td colspan="5" class="app-table-cell-muted">Lade Aktivitäten...</td>
             </tr>
             <tr v-else-if="activitiesError">
               <td colspan="5" class="app-table-cell-error">{{ activitiesError }}</td>
             </tr>
             <tr v-else-if="acceptedActivities.length === 0">
-              <td colspan="5" class="app-table-cell-muted">Keine zugesagten Aktivitaeten vorhanden.</td>
+              <td colspan="5" class="app-table-cell-muted">Keine zugesagten Aktivitäten vorhanden.</td>
             </tr>
             <tr v-for="activity in acceptedActivities" :key="`accepted-${activity.id}`">
               <td class="app-table-cell-main">{{ activity.title }}</td>
@@ -200,7 +200,7 @@
     >
       <div class="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl fade-in">
         <div class="mb-5 flex items-start justify-between">
-          <h2 class="app-card-title">Aktivitaetsdetails</h2>
+          <h2 class="app-card-title">Aktivitätsdetails</h2>
           <button
             type="button"
             class="text-xl leading-none text-gray-500 hover:text-gray-700"
@@ -253,7 +253,7 @@
         @submit.prevent="saveActivity"
       >
         <div class="mb-6 flex items-start justify-between">
-          <h2 class="app-card-title">Neue Aktivitaet erstellen</h2>
+          <h2 class="app-card-title">Neue Aktivität erstellen</h2>
           <button
             type="button"
             class="text-xl leading-none text-gray-500 hover:text-gray-700"
@@ -282,7 +282,7 @@
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="" disabled>
-                {{ isLoadingEligibleGroups ? 'Gruppen werden geladen...' : 'Bitte Gruppe waehlen' }}
+                {{ isLoadingEligibleGroups ? 'Gruppen werden geladen...' : 'Bitte Gruppe wählen' }}
               </option>
               <option
                 v-for="group in eligibleGroups"
@@ -321,7 +321,7 @@
               v-model.trim="form.description"
               rows="3"
               :disabled="isSubmitting"
-              placeholder="Kurze Beschreibung der Aktivitaet"
+              placeholder="Kurze Beschreibung der Aktivität"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -377,7 +377,7 @@
             :disabled="isSubmitting || isLoadingEligibleGroups || eligibleGroups.length === 0"
             :class="{ 'cursor-not-allowed opacity-70': isSubmitting || isLoadingEligibleGroups || eligibleGroups.length === 0 }"
           >
-            {{ isSubmitting ? 'Aktivitaet wird gespeichert...' : 'Aktivitaet speichern' }}
+            {{ isSubmitting ? 'Aktivität wird gespeichert...' : 'Aktivität speichern' }}
           </button>
         </div>
       </form>
@@ -641,7 +641,7 @@ const handleCloseRequest = () => {
   if (isSubmitting.value) return
 
   if (hasUnsavedInput.value) {
-    const shouldDiscard = window.confirm('Moechtest du den Editor wirklich schliessen? Die Aktivitaet wird verworfen.')
+    const shouldDiscard = window.confirm('Möchtest du den Editor wirklich schliessen? Die Aktivität wird verworfen.')
     if (!shouldDiscard) return
   }
 
@@ -688,7 +688,7 @@ const loadActivities = async () => {
   } catch {
     allActivities.value = []
     activityStatuses.value = {}
-    activitiesError.value = 'Aktivitaeten konnten nicht geladen werden.'
+    activitiesError.value = 'Aktivitäten konnten nicht geladen werden.'
   } finally {
     isLoadingActivities.value = false
   }
@@ -718,9 +718,9 @@ const respondToActivity = async (activityId: number, status: ParticipationStatus
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      errorMessage.value = backendMessage || 'Antwort zur Aktivitaet konnte nicht gespeichert werden.'
+      errorMessage.value = backendMessage || 'Antwort zur Aktivität konnte nicht gespeichert werden.'
     } else {
-      errorMessage.value = 'Antwort zur Aktivitaet konnte nicht gespeichert werden.'
+      errorMessage.value = 'Antwort zur Aktivität konnte nicht gespeichert werden.'
     }
   } finally {
     const nextMap = { ...actionLoadingById.value }
@@ -796,7 +796,7 @@ const saveActivity = async () => {
       groupIds: [groupId]
     })
 
-    successMessage.value = 'Aktivitaet wurde erfolgreich gespeichert.'
+    successMessage.value = 'Aktivität wurde erfolgreich gespeichert.'
     errorMessage.value = ''
     showCreateForm.value = false
     resetForm()
@@ -804,9 +804,9 @@ const saveActivity = async () => {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
-      createErrorMessage.value = backendMessage || 'Aktivitaet konnte nicht gespeichert werden.'
+      createErrorMessage.value = backendMessage || 'Aktivität konnte nicht gespeichert werden.'
     } else {
-      createErrorMessage.value = 'Aktivitaet konnte nicht gespeichert werden.'
+      createErrorMessage.value = 'Aktivität konnte nicht gespeichert werden.'
     }
   } finally {
     isSubmitting.value = false
