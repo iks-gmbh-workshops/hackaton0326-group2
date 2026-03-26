@@ -128,8 +128,86 @@ Konfiguriert ueber `.env` im Projektstammverzeichnis:
 - **[docs.md](docs.md)** – Vollstaendige API-Referenz mit Request/Response-Beispielen
 - **[Architecture.md](Architecture.md)** – Systemarchitektur, Datenmodell, Tech-Stack, Deployment
 - **[SECURITY.md](SECURITY.md)** – Sicherheitskonzept, Rollen, DSGVO, bekannte Einschraenkungen
+- **[MAINTENANCE.md](MAINTENANCE.md)** – Betriebs-, Wartungs- und Release-Runbook
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** – Beitrag, Branching, Commit- und PR-Standards
 - **[planning.md](planning.md)** – Urspruengliche Projektplanung und Aufgabenaufteilung
+- **[backend/README.md](backend/README.md)** – Backend-spezifische Entwicklung und Betrieb
 - **[frontend/README.md](frontend/README.md)** – Frontend-spezifische Dokumentation
+
+---
+
+## Betrieb und Wartung
+
+### Services pruefen
+
+```bash
+docker compose ps
+```
+
+### Logs anzeigen
+
+```bash
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f db
+```
+
+### Services neu starten
+
+```bash
+docker compose restart backend frontend
+```
+
+### Datenbank zuruecksetzen (Achtung: Datenverlust)
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+Weitere Betriebsdetails: siehe `MAINTENANCE.md`.
+
+---
+
+## Troubleshooting
+
+### Backend startet nicht (JWT-Fehler)
+
+- Ursache: `JWT_SECRET` fehlt oder ist ungueltig.
+- Loesung: in `.env` einen gueltigen Base64-String mit mindestens 256 Bit setzen.
+
+### Frontend kann API nicht erreichen
+
+- Pruefen, ob `backend` laeuft: `docker compose ps`
+- Bei lokalem Frontend-Start muss `VITE_API_URL` auf `http://localhost:8080/api` zeigen.
+- Bei Docker-Frontend wird `/api` ueber Nginx an `backend:8080` weitergeleitet.
+
+### Mailversand funktioniert nicht
+
+- `MAIL_PASSWORD` in `.env` setzen.
+- SMTP-Konfiguration in `backend/src/main/resources/application.yml` pruefen.
+- Backend-Logs auf `Failed to send invitation email` kontrollieren.
+
+---
+
+## Beitrag leisten
+
+### Empfohlener Ablauf
+
+1. Branch erstellen (`feature/...`, `fix/...`, `docs/...`)
+2. Aenderungen lokal testen
+3. Relevante Tests ausfuehren
+4. Dokumentation aktualisieren, falls Verhalten/Setup geaendert wurde
+
+### Mindest-Checks vor Merge
+
+```bash
+# Backend
+cd backend && ./mvnw test
+
+# Frontend
+cd frontend && npm run lint && npm run build
+```
 
 ---
 
