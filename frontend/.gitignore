@@ -22,3 +22,7 @@ dist-ssr
 # Build Files
 *.tar.gz
 Agents.md
+
+# Playwright
+playwright-report/
+test-results/

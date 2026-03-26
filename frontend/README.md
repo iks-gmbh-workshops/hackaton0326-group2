@@ -39,6 +39,29 @@ npm run build
 npm run preview
 ```
 
+## E2E Tests mit Playwright
+
+Einmalige Einrichtung:
+
+```bash
+npm install
+npx playwright install
+```
+
+Tests ausfuehren:
+
+```bash
+npm run test:e2e
+```
+
+Nuetzliche Modi:
+
+```bash
+npm run test:e2e:ui
+npm run test:e2e:headed
+npm run test:e2e:debug
+```
+
 ## Projektstruktur
 
 ```text

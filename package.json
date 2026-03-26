@@ -1,0 +1,18 @@
+{
+  "name": "hackaton0326-group2",
+  "version": "1.0.0",
+  "description": "Eine Webanwendung zur Organisation von Gruppen und gemeinsamen Aktivitäten. Nutzer können Gruppen erstellen, Mitglieder einladen und Aktivitäten planen, zu denen Teilnehmer zu- oder absagen können.",
+  "main": "index.js",
+  "scripts": {
+    "test:e2e": "npm --prefix frontend run test:e2e --",
+    "test:e2e:ui": "npm --prefix frontend run test:e2e:ui --",
+    "test:e2e:headed": "npm --prefix frontend run test:e2e:headed --",
+    "test:e2e:debug": "npm --prefix frontend run test:e2e:debug --"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.5.0"
+  }
+}

@@ -66,3 +66,11 @@ release/*.tar.gz
 # Uncomment if you want to exclude application.properties
 # **/application.properties
 .env
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
