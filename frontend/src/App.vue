@@ -84,8 +84,7 @@ const navItems = [
   { label: 'Startseite', to: '/' },
   { label: 'Gruppen', to: '/groups' },
   { label: 'Aktivitäten', to: '/activities' },
-  { label: 'Profilverwaltung', to: '/profile' },
-  { label: 'Administration', to: '/admin' }
+  { label: 'Profilverwaltung', to: '/profile' }
 ]
 
 const syncAuthState = () => {
@@ -105,7 +104,7 @@ const parseJwtPayload = (token: string): JwtPayload | null => {
 }
 
 const isAdmin = computed(() => {
-  const localRole = localStorage.getItem('role')
+  const localRole = localStorage.getItem('auth_role')
 
   if (localRole?.toUpperCase() === 'ADMIN') {
     return true
