@@ -17,7 +17,7 @@
         :disabled="isSubmitting"
       />
 
-      <PasswordFiled
+      <PasswordField
         id="password"
         v-model="form.password"
         label="Passwort (Pflicht)"
@@ -58,7 +58,7 @@
           required
           class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         />
-        <span>Ich stimme den AGB von hackathon-b zu. (Pflicht)</span>
+        <span>Ich stimme den <a href="https://www.drumdibum.de/terms-and-conditions" target="_blank" class="app-link-primary">AGB</a> von hackathon-b zu. (Pflicht)</span>
       </label>
 
       <button
@@ -91,7 +91,7 @@
 import { reactive, ref } from 'vue'
 import axios from 'axios'
 import EmailField from '@/components/fields/EmailField.vue'
-import PasswordFiled from '@/components/fields/PasswordFiled.vue'
+import PasswordField from '@/components/fields/PasswordField.vue'
 import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
 

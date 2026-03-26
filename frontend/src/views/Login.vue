@@ -10,7 +10,7 @@
         :disabled="isSubmitting"
       />
 
-      <PasswordFiled
+      <PasswordField
         id="password"
         v-model="password"
         label="Passwort"
@@ -48,8 +48,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
-import PasswordFiled from '@/components/fields/PasswordFiled.vue'
-import UsernameField from '@/components/fields/UsernameField.vue'
+import PasswordField from '@/components/fields/PasswordField.vue'
 import { authService } from '../api/authService'
 import EmailField from '@/components/fields/EmailField.vue'
 
