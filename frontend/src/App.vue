@@ -83,8 +83,9 @@ const isLoggedIn = ref(false)
 const navItems = [
   { label: 'Startseite', to: '/' },
   { label: 'Gruppen', to: '/groups' },
-  { label: 'Aktivitaeten', to: '/activities' },
-  { label: 'Profilverwaltung', to: '/profile' }
+  { label: 'Aktivitäten', to: '/activities' },
+  { label: 'Profilverwaltung', to: '/profile' },
+  { label: 'Administration', to: '/admin' }
 ]
 
 const syncAuthState = () => {
