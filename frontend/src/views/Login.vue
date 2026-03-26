@@ -5,8 +5,8 @@
     <form class="space-y-4" @submit.prevent="onSubmit">
       <EmailField
         id="Email"
-        v-model="username"
-        label="Username"
+        v-model="email"
+        label="Email"
         :disabled="isSubmitting"
       />
 
@@ -53,7 +53,7 @@ import UsernameField from '@/components/fields/UsernameField.vue'
 import { authService } from '../api/authService'
 import EmailField from '@/components/fields/EmailField.vue'
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
@@ -70,7 +70,7 @@ const onSubmit = async () => {
 
   try {
     const response = await authService.login({
-      email: username.value.trim(),
+      email: email.value.trim(),
       password: password.value
     })
 
